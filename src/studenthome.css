@@ -1,0 +1,53 @@
+.student-home-page {
+	width: 100%;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 1.5rem;
+}
+
+.student-home-card {
+	border: 1px solid rgba(128, 128, 128, 0.35);
+	border-radius: 12px;
+	padding: 1.5rem;
+}
+
+.student-home-card h1 {
+	margin: 0 0 1rem;
+	font-size: 1.9rem;
+}
+
+.apply-pass-form {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.apply-pass-form label {
+	font-weight: 500;
+}
+
+.apply-pass-form input,
+.apply-pass-form textarea {
+	width: 100%;
+	box-sizing: border-box;
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	border-radius: 8px;
+	padding: 0.65rem 0.75rem;
+	font: inherit;
+	background-color: Field;
+	color: FieldText;
+}
+
+.apply-pass-form input:focus,
+.apply-pass-form textarea:focus {
+	outline: 2px solid #646cff;
+	outline-offset: 1px;
+}
+
+.apply-pass-form textarea {
+	resize: vertical;
+}
+
+.apply-pass-form button {
+	margin-top: 0.5rem;
+	width: 100%;
+}

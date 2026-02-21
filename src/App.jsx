@@ -1,34 +1,175 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
+import Register from './register'
+import StudentHome from './studenthome'
+import RCHome from './rchome'
+
+const USER_STORAGE_KEY = 'registeredUsers'
+const RC_STORAGE_KEY = 'registeredRcUsers'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [showRegister, setShowRegister] = useState(false)
+  const [showStudentHome, setShowStudentHome] = useState(false)
+  const [showRCHome, setShowRCHome] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [userType, setUserType] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    const storedUsers = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? '[]')
+
+    const demoRc = {
+      userType: 'RC',
+      username: 'rcdemo',
+      email: 'rc@demo.com',
+      mobileNo: '9876543210',
+      password: 'Rc@12345',
+      authorizedRc: '',
+    }
+
+    const demoStudent = {
+      userType: 'Student',
+      username: 'studentdemo',
+      email: 'student@demo.com',
+      mobileNo: '9123456780',
+      password: 'Stud@123',
+      authorizedRc: 'rcdemo',
+    }
+
+    const hasDemoRc = storedUsers.some(
+      (user) => user.userType === 'RC' && user.email === demoRc.email
+    )
+    const hasDemoStudent = storedUsers.some(
+      (user) => user.userType === 'Student' && user.email === demoStudent.email
+    )
+
+    if (!hasDemoRc || !hasDemoStudent) {
+      const updatedUsers = [...storedUsers]
+
+      if (!hasDemoRc) {
+        updatedUsers.push(demoRc)
+      }
+
+      if (!hasDemoStudent) {
+        updatedUsers.push(demoStudent)
+      }
+
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUsers))
+    }
+
+    const storedRcs = JSON.parse(localStorage.getItem(RC_STORAGE_KEY) ?? '[]')
+    if (!storedRcs.includes('rcdemo')) {
+      localStorage.setItem(RC_STORAGE_KEY, JSON.stringify([...storedRcs, 'rcdemo']))
+    }
+  }, [])
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    const registeredUsers = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? '[]')
+    const matchedUser = registeredUsers.find(
+      (user) => user.userType === userType && user.email === email && user.password === password
+    )
+
+    if (!matchedUser) {
+      alert('Invalid login details. Please check user type, email, and password.')
+      return
+    }
+
+    if (userType === 'Student') {
+      setCurrentUser(matchedUser)
+      setShowStudentHome(true)
+      return
+    }
+
+    if (userType === 'RC') {
+      setCurrentUser(matchedUser)
+      setShowRCHome(true)
+    }
+  }
+
+  const handleOpenRegister = (event) => {
+    event.preventDefault()
+    setShowRegister(true)
+  }
+
+  const handleBackToLogin = () => {
+    setCurrentUser(null)
+    setUserType('')
+    setEmail('')
+    setPassword('')
+    setShowRegister(false)
+    setShowStudentHome(false)
+    setShowRCHome(false)
+  }
+
+  if (showRegister) {
+    return <Register onBackToLogin={handleBackToLogin} />
+  }
+
+  if (showStudentHome) {
+    return <StudentHome currentUser={currentUser} />
+  }
+
+  if (showRCHome) {
+    return <RCHome currentRc={currentUser} />
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <main className="login-page">
+      <section className="login-card" aria-labelledby="login-title">
+        <h1 id="login-title">Login</h1>
+        <p className="login-subtitle">Sign in to continue to your application</p>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label htmlFor="userType">User Type</label>
+          <select
+            id="userType"
+            name="userType"
+            value={userType}
+            onChange={(event) => setUserType(event.target.value)}
+            required
+          >
+            <option value="" disabled>
+              Select user type
+            </option>
+            <option value="Student">Student</option>
+            <option value="RC">RC</option>
+          </select>
+
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+
+          <button type="submit">Sign in</button>
+          <p className="register-text">
+            Don&apos;t have an account?{' '}
+            <a href="#" onClick={handleOpenRegister}>
+              Register now
+            </a>
+          </p>
+        </form>
+      </section>
+    </main>
   )
 }
 
