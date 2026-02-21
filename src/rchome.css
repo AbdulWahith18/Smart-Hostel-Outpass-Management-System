@@ -3,12 +3,14 @@
 	max-width: 900px;
 	margin: 0 auto;
 	padding: 1.5rem;
+	box-sizing: border-box;
 }
 
 .rc-home-card {
 	border: 1px solid rgba(128, 128, 128, 0.35);
 	border-radius: 12px;
 	padding: 1.5rem;
+	background-color: #e9eef7;
 }
 
 .rc-home-card h1 {
@@ -42,6 +44,7 @@
 	border: 1px solid rgba(128, 128, 128, 0.35);
 	border-radius: 10px;
 	padding: 0.9rem;
+	background-color: #dfe6f3;
 }
 
 .pass-item p {

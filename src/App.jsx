@@ -3,11 +3,14 @@ import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
 import RCHome from './rchome'
+import MainPage from './mainpage'
+import TopBar from './topbar'
 
 const USER_STORAGE_KEY = 'registeredUsers'
 const RC_STORAGE_KEY = 'registeredRcUsers'
 
 function App() {
+  const [showMainPage, setShowMainPage] = useState(true)
   const [showRegister, setShowRegister] = useState(false)
   const [showStudentHome, setShowStudentHome] = useState(false)
   const [showRCHome, setShowRCHome] = useState(false)
@@ -91,6 +94,17 @@ function App() {
 
   const handleOpenRegister = (event) => {
     event.preventDefault()
+    setShowMainPage(false)
+    setShowRegister(true)
+  }
+
+  const handleOpenLogin = () => {
+    setShowMainPage(false)
+    setShowRegister(false)
+  }
+
+  const handleOpenRegisterFromMain = () => {
+    setShowMainPage(false)
     setShowRegister(true)
   }
 
@@ -105,71 +119,93 @@ function App() {
   }
 
   if (showRegister) {
-    return <Register onBackToLogin={handleBackToLogin} />
+    return (
+      <>
+        <TopBar />
+        <Register onBackToLogin={handleBackToLogin} />
+      </>
+    )
   }
 
   if (showStudentHome) {
-    return <StudentHome currentUser={currentUser} />
+    return (
+      <>
+        <TopBar showLogout onLogout={handleBackToLogin} />
+        <StudentHome currentUser={currentUser} />
+      </>
+    )
   }
 
   if (showRCHome) {
-    return <RCHome currentRc={currentUser} />
+    return (
+      <>
+        <TopBar showLogout onLogout={handleBackToLogin} />
+        <RCHome currentRc={currentUser} />
+      </>
+    )
+  }
+
+  if (showMainPage) {
+    return <MainPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} />
   }
 
   return (
-    <main className="login-page">
-      <section className="login-card" aria-labelledby="login-title">
-        <h1 id="login-title">Login</h1>
-        <p className="login-subtitle">Sign in to continue to your application</p>
+    <>
+      <TopBar />
+      <main className="login-page">
+        <section className="login-card" aria-labelledby="login-title">
+          <h1 id="login-title">Login</h1>
+          <p className="login-subtitle">Sign in to continue to your application</p>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label htmlFor="userType">User Type</label>
-          <select
-            id="userType"
-            name="userType"
-            value={userType}
-            onChange={(event) => setUserType(event.target.value)}
-            required
-          >
-            <option value="" disabled>
-              Select user type
-            </option>
-            <option value="Student">Student</option>
-            <option value="RC">RC</option>
-          </select>
+          <form className="login-form" onSubmit={handleSubmit}>
+            <label htmlFor="userType">User Type</label>
+            <select
+              id="userType"
+              name="userType"
+              value={userType}
+              onChange={(event) => setUserType(event.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Select user type
+              </option>
+              <option value="Student">Student</option>
+              <option value="RC">RC</option>
+            </select>
 
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
 
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
 
-          <button type="submit">Sign in</button>
-          <p className="register-text">
-            Don&apos;t have an account?{' '}
-            <a href="#" onClick={handleOpenRegister}>
-              Register now
-            </a>
-          </p>
-        </form>
-      </section>
-    </main>
+            <button type="submit">Sign in</button>
+            <p className="register-text">
+              Don&apos;t have an account?{' '}
+              <a href="#" onClick={handleOpenRegister}>
+                Register now
+              </a>
+            </p>
+          </form>
+        </section>
+      </main>
+    </>
   )
 }
 

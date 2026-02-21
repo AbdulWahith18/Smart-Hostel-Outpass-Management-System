@@ -1,0 +1,83 @@
+.top-bar {
+	width: 100%;
+	background-color: rgb(70, 120, 100);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+}
+
+.top-bar-content {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0.65rem 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.top-bar-left {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+}
+
+.top-bar-logout-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.top-bar-logo {
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	object-fit: cover;
+	object-position: center;
+	clip-path: circle(50% at 50% 50%);
+	transform: scale(1.24);
+}
+
+.top-bar-title {
+	margin: 0;
+	font-size: 1.3rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	color: #f8fbff;
+}
+
+.top-bar-logout {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.45rem 0.8rem;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	background-color: rgba(255, 255, 255, 0.12);
+	color: #f8fbff;
+	font-weight: 600;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.top-bar-logout:hover {
+	background-color: rgba(255, 255, 255, 0.24);
+	border-color: rgba(255, 255, 255, 0.7);
+	color: #ffffff;
+}
+
+.top-bar-logout-icon {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: center;
+}
+
+.top-bar-logout-icon-wrap {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background-color: transparent;
+}

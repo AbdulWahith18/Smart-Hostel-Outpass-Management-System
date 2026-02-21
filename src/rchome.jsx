@@ -3,6 +3,19 @@ import './rchome.css'
 
 const PASS_REQUESTS_KEY = 'passRequests'
 
+const formatDateTime = (value) => {
+  if (!value) {
+    return '-'
+  }
+
+  const parsedValue = new Date(value)
+  if (!Number.isNaN(parsedValue.getTime())) {
+    return parsedValue.toLocaleString()
+  }
+
+  return value.replace('T', ' ')
+}
+
 function RCHome({ currentRc }) {
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -57,10 +70,10 @@ function RCHome({ currentRc }) {
                     <strong>Applied On:</strong> {request.appliedOn}
                   </p>
                   <p>
-                    <strong>Leaving:</strong> {request.leaveDateTime}
+                    <strong>Leaving:</strong> {formatDateTime(request.leaveDateTime)}
                   </p>
                   <p>
-                    <strong>Returning:</strong> {request.returnDateTime}
+                    <strong>Returning:</strong> {formatDateTime(request.returnDateTime)}
                   </p>
                   <p>
                     <strong>Address:</strong> {request.address}
@@ -95,13 +108,13 @@ function RCHome({ currentRc }) {
                     <strong>Register No:</strong> {request.registerNo}
                   </p>
                   <p>
-                    <strong>Approved At:</strong> {request.approvedAt ?? '-'}
+                    <strong>Approved At:</strong> {formatDateTime(request.approvedAt)}
                   </p>
                   <p>
-                    <strong>Leaving:</strong> {request.leaveDateTime}
+                    <strong>Leaving:</strong> {formatDateTime(request.leaveDateTime)}
                   </p>
                   <p>
-                    <strong>Returning:</strong> {request.returnDateTime}
+                    <strong>Returning:</strong> {formatDateTime(request.returnDateTime)}
                   </p>
                 </li>
               ))}
