@@ -53,3 +53,62 @@
 	margin-top: 0.5rem;
 	width: 100%;
 }
+
+.applied-pass-section {
+	margin-top: 1.5rem;
+	padding-top: 1rem;
+	border-top: 1px solid rgba(128, 128, 128, 0.35);
+}
+
+.applied-pass-section h2 {
+	margin: 0 0 0.75rem;
+	font-size: 1.3rem;
+}
+
+.applied-pass-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.applied-pass-item {
+	border: 1px solid rgba(128, 128, 128, 0.4);
+	border-radius: 10px;
+	padding: 0.75rem;
+	background-color: rgba(255, 255, 255, 0.6);
+}
+
+.applied-pass-item p {
+	margin: 0.2rem 0;
+}
+
+.pass-status {
+	display: inline-block;
+	padding: 0.1rem 0.5rem;
+	border-radius: 999px;
+	font-size: 0.85rem;
+	font-weight: 600;
+}
+
+.pass-status-pending {
+	background-color: rgba(255, 195, 0, 0.2);
+	color: #8a6700;
+}
+
+.pass-status-approved {
+	background-color: rgba(0, 128, 0, 0.15);
+	color: #1f6a1f;
+}
+
+.empty-text {
+	margin: 0;
+	opacity: 0.85;
+}
+
+.fetch-error-text {
+	margin: 0 0 0.5rem;
+	color: #a53b3b;
+	font-weight: 500;
+}

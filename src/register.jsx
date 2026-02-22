@@ -1,23 +1,29 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './register.css'
-
-const RC_STORAGE_KEY = 'registeredRcUsers'
-const USER_STORAGE_KEY = 'registeredUsers'
 
 function Register({ onBackToLogin }) {
   const [userType, setUserType] = useState('')
   const [authorizedRc, setAuthorizedRc] = useState('')
-  const [registeredRcs, setRegisteredRcs] = useState(() => {
-    try {
-      const storedValue = localStorage.getItem(RC_STORAGE_KEY)
-      const parsedValue = storedValue ? JSON.parse(storedValue) : []
-      return Array.isArray(parsedValue) ? parsedValue : []
-    } catch {
-      return []
-    }
-  })
+  const [registeredRcs, setRegisteredRcs] = useState([])
 
-  const handleSubmit = (event) => {
+  const fetchRcUsers = async () => {
+    try {
+      const response = await fetch('/api/auth/rc-users')
+      const data = await response.json()
+
+      if (response.ok) {
+        setRegisteredRcs(data.rcUsers ?? [])
+      }
+    } catch {
+      setRegisteredRcs([])
+    }
+  }
+
+  useEffect(() => {
+    fetchRcUsers()
+  }, [])
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
@@ -61,67 +67,40 @@ function Register({ onBackToLogin }) {
       }
     }
 
-    if (selectedUserType === 'RC') {
-      const alreadyRegistered = registeredRcs.includes(username)
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userType: selectedUserType,
+          username,
+          email: formData.get('email')?.toString() ?? '',
+          mobileNo,
+          password,
+          authorizedRc: selectedUserType === 'Student' ? authorizedRc : '',
+        }),
+      })
 
-      if (!alreadyRegistered) {
-        const updatedRcs = [...registeredRcs, username]
-        setRegisteredRcs(updatedRcs)
-        localStorage.setItem(RC_STORAGE_KEY, JSON.stringify(updatedRcs))
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.message ?? 'Failed to create account.')
+        return
       }
+
+      if (selectedUserType === 'RC') {
+        setRegisteredRcs((currentRcs) =>
+          currentRcs.includes(username) ? currentRcs : [...currentRcs, username]
+        )
+      }
+
+      alert('Account created successfully!')
+      onBackToLogin?.()
+    } catch {
+      alert('Unable to reach server. Please try again.')
     }
-
-    const registeredUsers = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? '[]')
-    const duplicateUser = registeredUsers.some(
-      (user) => user.userType === selectedUserType && user.email === formData.get('email')?.toString()
-    )
-
-    if (duplicateUser) {
-      alert('An account with this email already exists for the selected user type.')
-      return
-    }
-
-    const userRecord = {
-      userType: selectedUserType,
-      username,
-      email: formData.get('email')?.toString() ?? '',
-      mobileNo,
-      password,
-      authorizedRc: selectedUserType === 'Student' ? authorizedRc : '',
-    }
-
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify([...registeredUsers, userRecord]))
-
-    alert('Account created successfully!')
-    onBackToLogin?.()
-  }
-
-  const handleCreateDemoFlow = () => {
-    const demoRc = {
-      userType: 'RC',
-      username: 'rcdemo',
-      email: 'rc@demo.com',
-      mobileNo: '9876543210',
-      password: 'Rc@12345',
-      authorizedRc: '',
-    }
-
-    const demoStudent = {
-      userType: 'Student',
-      username: 'studentdemo',
-      email: 'student@demo.com',
-      mobileNo: '9123456780',
-      password: 'Stud@123',
-      authorizedRc: 'rcdemo',
-    }
-
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify([demoRc, demoStudent]))
-    localStorage.setItem(RC_STORAGE_KEY, JSON.stringify(['rcdemo']))
-    setRegisteredRcs(['rcdemo'])
-
-    alert(
-      'Demo accounts created. RC: rc@demo.com / Rc@12345. Student: student@demo.com / Stud@123'
-    )
   }
 
   return (
@@ -136,8 +115,13 @@ function Register({ onBackToLogin }) {
             name="userType"
             value={userType}
             onChange={(event) => {
-              setUserType(event.target.value)
+              const nextUserType = event.target.value
+              setUserType(nextUserType)
               setAuthorizedRc('')
+
+              if (nextUserType === 'Student') {
+                fetchRcUsers()
+              }
             }}
             required
           >
@@ -208,9 +192,6 @@ function Register({ onBackToLogin }) {
           />
 
           <button type="submit">Create Account</button>
-          <button type="button" className="demo-flow-button" onClick={handleCreateDemoFlow}>
-            Create Demo RC + Student
-          </button>
 
           {onBackToLogin && (
             <p className="switch-text">

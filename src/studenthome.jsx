@@ -1,9 +1,23 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './studenthome.css'
 
-const PASS_REQUESTS_KEY = 'passRequests'
+const formatDateTime = (value) => {
+  if (!value) {
+    return '-'
+  }
+
+  const parsedValue = new Date(value)
+  if (!Number.isNaN(parsedValue.getTime())) {
+    return parsedValue.toLocaleString()
+  }
+
+  return value.replace('T', ' ')
+}
 
 function StudentHome({ currentUser }) {
+  const [appliedPasses, setAppliedPasses] = useState([])
+  const [passFetchError, setPassFetchError] = useState('')
+
   const appliedDateTime = useMemo(() => {
     const now = new Date()
     const offset = now.getTimezoneOffset()
@@ -11,12 +25,47 @@ function StudentHome({ currentUser }) {
     return localNow.toISOString().slice(0, 16)
   }, [])
 
-  const handleSubmit = (event) => {
+  const fetchAppliedPasses = async () => {
+    const studentEmail = currentUser?.email ?? ''
+
+    if (!studentEmail) {
+      setAppliedPasses([])
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/pass-requests/student?email=${encodeURIComponent(studentEmail)}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setPassFetchError(data.message ?? 'Failed to fetch applied passes.')
+        return
+      }
+
+      setPassFetchError('')
+      setAppliedPasses(data.requests ?? [])
+    } catch {
+      setPassFetchError('Unable to reach server. Retrying...')
+    }
+  }
+
+  useEffect(() => {
+    fetchAppliedPasses()
+
+    const intervalId = setInterval(() => {
+      fetchAppliedPasses()
+    }, 5000)
+
+    return () => {
+      clearInterval(intervalId)
+    }
+  }, [currentUser?.email])
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
     const passRequest = {
-      id: crypto.randomUUID(),
       studentEmail: currentUser?.email ?? '',
       studentUsername: currentUser?.username ?? '',
       authorizedRc: currentUser?.authorizedRc ?? '',
@@ -36,11 +85,28 @@ function StudentHome({ currentUser }) {
       approvedAt: '',
     }
 
-    const existingRequests = JSON.parse(localStorage.getItem(PASS_REQUESTS_KEY) ?? '[]')
-    localStorage.setItem(PASS_REQUESTS_KEY, JSON.stringify([...existingRequests, passRequest]))
+    try {
+      const response = await fetch('/api/pass-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(passRequest),
+      })
 
-    alert('Pass application submitted successfully!')
-    event.currentTarget.reset()
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.message ?? 'Failed to submit pass application.')
+        return
+      }
+
+      alert('Pass application submitted successfully!')
+      event.currentTarget.reset()
+      fetchAppliedPasses()
+    } catch {
+      alert('Unable to reach server. Please try again.')
+    }
   }
 
   return (
@@ -103,6 +169,45 @@ function StudentHome({ currentUser }) {
 
           <button type="submit">Submit PASS Application</button>
         </form>
+
+        <div className="applied-pass-section">
+          <h2>Applied Passes</h2>
+          {passFetchError && <p className="fetch-error-text">{passFetchError}</p>}
+          {appliedPasses.length === 0 ? (
+            <p className="empty-text">No applied passes yet.</p>
+          ) : (
+            <ul className="applied-pass-list">
+              {appliedPasses.map((passRequest) => (
+                <li key={passRequest._id} className="applied-pass-item">
+                  <p>
+                    <strong>Register No:</strong> {passRequest.registerNo}
+                  </p>
+                  <p>
+                    <strong>Leaving:</strong> {formatDateTime(passRequest.leaveDateTime)}
+                  </p>
+                  <p>
+                    <strong>Returning:</strong> {formatDateTime(passRequest.returnDateTime)}
+                  </p>
+                  <p>
+                    <strong>Status:</strong>{' '}
+                    <span
+                      className={`pass-status ${
+                        passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
+                      }`}
+                    >
+                      {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
+                    </span>
+                  </p>
+                  {passRequest.status === 'approved' && (
+                    <p>
+                      <strong>Approved At:</strong> {formatDateTime(passRequest.approvedAt)}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </section>
     </main>
   )

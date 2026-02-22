@@ -1,7 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import './rchome.css'
-
-const PASS_REQUESTS_KEY = 'passRequests'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -17,30 +15,59 @@ const formatDateTime = (value) => {
 }
 
 function RCHome({ currentRc }) {
-  const [refreshKey, setRefreshKey] = useState(0)
+  const [requestsForRc, setRequestsForRc] = useState([])
 
-  const requestsForRc = useMemo(() => {
-    const storedRequests = JSON.parse(localStorage.getItem(PASS_REQUESTS_KEY) ?? '[]')
-    return storedRequests.filter((request) => request.authorizedRc === currentRc?.username)
-  }, [currentRc?.username, refreshKey])
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!currentRc?.username) {
+        setRequestsForRc([])
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/pass-requests/rc/${encodeURIComponent(currentRc.username)}`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          alert(data.message ?? 'Failed to fetch pass requests.')
+          return
+        }
+
+        setRequestsForRc(data.requests ?? [])
+      } catch {
+        alert('Unable to reach server. Please try again.')
+      }
+    }
+
+    fetchRequests()
+  }, [currentRc?.username])
 
   const pendingRequests = requestsForRc.filter((request) => request.status === 'pending')
   const approvedRequests = requestsForRc.filter((request) => request.status === 'approved')
 
-  const handleApprove = (requestId) => {
-    const storedRequests = JSON.parse(localStorage.getItem(PASS_REQUESTS_KEY) ?? '[]')
-    const updatedRequests = storedRequests.map((request) =>
-      request.id === requestId
-        ? {
-            ...request,
-            status: 'approved',
-            approvedAt: new Date().toISOString(),
-          }
-        : request
-    )
+  const handleApprove = async (requestId) => {
+    try {
+      const response = await fetch(`/api/pass-requests/${requestId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rcUsername: currentRc?.username ?? '' }),
+      })
 
-    localStorage.setItem(PASS_REQUESTS_KEY, JSON.stringify(updatedRequests))
-    setRefreshKey((value) => value + 1)
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.message ?? 'Failed to approve pass request.')
+        return
+      }
+
+      setRequestsForRc((requests) =>
+        requests.map((request) => (request._id === requestId ? data.passRequest : request))
+      )
+    } catch {
+      alert('Unable to reach server. Please try again.')
+    }
   }
 
   return (
@@ -56,7 +83,7 @@ function RCHome({ currentRc }) {
           ) : (
             <ul className="pass-list">
               {pendingRequests.map((request) => (
-                <li key={request.id} className="pass-item">
+                <li key={request._id} className="pass-item">
                   <p>
                     <strong>Student:</strong> {request.name}
                   </p>
@@ -84,7 +111,7 @@ function RCHome({ currentRc }) {
                   <p>
                     <strong>Parent/Guardian Phone:</strong> {request.guardianPhoneNo}
                   </p>
-                  <button type="button" onClick={() => handleApprove(request.id)}>
+                  <button type="button" onClick={() => handleApprove(request._id)}>
                     Approve Pass
                   </button>
                 </li>
@@ -100,7 +127,7 @@ function RCHome({ currentRc }) {
           ) : (
             <ul className="pass-list">
               {approvedRequests.map((request) => (
-                <li key={request.id} className="pass-item approved">
+                <li key={request._id} className="pass-item approved">
                   <p>
                     <strong>Student:</strong> {request.name}
                   </p>

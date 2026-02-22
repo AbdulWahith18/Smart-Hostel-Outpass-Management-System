@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
 import RCHome from './rchome'
 import MainPage from './mainpage'
 import TopBar from './topbar'
-
-const USER_STORAGE_KEY = 'registeredUsers'
-const RC_STORAGE_KEY = 'registeredRcUsers'
 
 function App() {
   const [showMainPage, setShowMainPage] = useState(true)
@@ -19,76 +16,38 @@ function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  useEffect(() => {
-    const storedUsers = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? '[]')
-
-    const demoRc = {
-      userType: 'RC',
-      username: 'rcdemo',
-      email: 'rc@demo.com',
-      mobileNo: '9876543210',
-      password: 'Rc@12345',
-      authorizedRc: '',
-    }
-
-    const demoStudent = {
-      userType: 'Student',
-      username: 'studentdemo',
-      email: 'student@demo.com',
-      mobileNo: '9123456780',
-      password: 'Stud@123',
-      authorizedRc: 'rcdemo',
-    }
-
-    const hasDemoRc = storedUsers.some(
-      (user) => user.userType === 'RC' && user.email === demoRc.email
-    )
-    const hasDemoStudent = storedUsers.some(
-      (user) => user.userType === 'Student' && user.email === demoStudent.email
-    )
-
-    if (!hasDemoRc || !hasDemoStudent) {
-      const updatedUsers = [...storedUsers]
-
-      if (!hasDemoRc) {
-        updatedUsers.push(demoRc)
-      }
-
-      if (!hasDemoStudent) {
-        updatedUsers.push(demoStudent)
-      }
-
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUsers))
-    }
-
-    const storedRcs = JSON.parse(localStorage.getItem(RC_STORAGE_KEY) ?? '[]')
-    if (!storedRcs.includes('rcdemo')) {
-      localStorage.setItem(RC_STORAGE_KEY, JSON.stringify([...storedRcs, 'rcdemo']))
-    }
-  }, [])
-
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const registeredUsers = JSON.parse(localStorage.getItem(USER_STORAGE_KEY) ?? '[]')
-    const matchedUser = registeredUsers.find(
-      (user) => user.userType === userType && user.email === email && user.password === password
-    )
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userType, email, password }),
+      })
 
-    if (!matchedUser) {
-      alert('Invalid login details. Please check user type, email, and password.')
-      return
-    }
+      const data = await response.json()
 
-    if (userType === 'Student') {
-      setCurrentUser(matchedUser)
-      setShowStudentHome(true)
-      return
-    }
+      if (!response.ok) {
+        alert(data.message ?? 'Login failed.')
+        return
+      }
 
-    if (userType === 'RC') {
-      setCurrentUser(matchedUser)
-      setShowRCHome(true)
+      localStorage.setItem('authToken', data.token)
+      setCurrentUser(data.user)
+
+      if (data.user.userType === 'Student') {
+        setShowStudentHome(true)
+        return
+      }
+
+      if (data.user.userType === 'RC') {
+        setShowRCHome(true)
+      }
+    } catch {
+      alert('Unable to reach server. Please try again.')
     }
   }
 
@@ -109,6 +68,7 @@ function App() {
   }
 
   const handleBackToLogin = () => {
+    localStorage.removeItem('authToken')
     setCurrentUser(null)
     setUserType('')
     setEmail('')
