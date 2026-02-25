@@ -11,6 +11,8 @@ function App() {
   const [showRegister, setShowRegister] = useState(false)
   const [showStudentHome, setShowStudentHome] = useState(false)
   const [showRCHome, setShowRCHome] = useState(false)
+  const [studentActiveView, setStudentActiveView] = useState('apply')
+  const [rcActiveView, setRcActiveView] = useState('pending')
   const [currentUser, setCurrentUser] = useState(null)
   const [userType, setUserType] = useState('')
   const [email, setEmail] = useState('')
@@ -39,11 +41,13 @@ function App() {
       setCurrentUser(data.user)
 
       if (data.user.userType === 'Student') {
+        setStudentActiveView('apply')
         setShowStudentHome(true)
         return
       }
 
       if (data.user.userType === 'RC') {
+        setRcActiveView('pending')
         setShowRCHome(true)
       }
     } catch {
@@ -70,6 +74,8 @@ function App() {
   const handleBackToLogin = () => {
     localStorage.removeItem('authToken')
     setCurrentUser(null)
+    setStudentActiveView('apply')
+    setRcActiveView('pending')
     setUserType('')
     setEmail('')
     setPassword('')
@@ -91,7 +97,38 @@ function App() {
     return (
       <>
         <TopBar showLogout onLogout={handleBackToLogin} />
-        <StudentHome currentUser={currentUser} />
+        <aside className="app-side-drawer app-side-drawer-open" aria-label="Pass menu">
+          <button
+            type="button"
+            className={`app-side-item ${studentActiveView === 'apply' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setStudentActiveView('apply')
+            }}
+          >
+            Apply Pass
+          </button>
+          <button
+            type="button"
+            className={`app-side-item ${studentActiveView === 'pending' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setStudentActiveView('pending')
+            }}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            className={`app-side-item ${studentActiveView === 'approved' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setStudentActiveView('approved')
+            }}
+          >
+            Approved
+          </button>
+        </aside>
+        <div className="app-main-shell app-main-shell-open">
+          <StudentHome currentUser={currentUser} activeView={studentActiveView} onViewChange={setStudentActiveView} />
+        </div>
       </>
     )
   }
@@ -100,7 +137,29 @@ function App() {
     return (
       <>
         <TopBar showLogout onLogout={handleBackToLogin} />
-        <RCHome currentRc={currentUser} />
+        <aside className="app-side-drawer app-side-drawer-open" aria-label="Pass menu">
+          <button
+            type="button"
+            className={`app-side-item ${rcActiveView === 'pending' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setRcActiveView('pending')
+            }}
+          >
+            Pending
+          </button>
+          <button
+            type="button"
+            className={`app-side-item ${rcActiveView === 'approved' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setRcActiveView('approved')
+            }}
+          >
+            Approved
+          </button>
+        </aside>
+        <div className="app-main-shell app-main-shell-open">
+          <RCHome currentRc={currentUser} activeView={rcActiveView} />
+        </div>
       </>
     )
   }

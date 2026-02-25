@@ -14,7 +14,7 @@ const formatDateTime = (value) => {
   return value.replace('T', ' ')
 }
 
-function StudentHome({ currentUser }) {
+function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   const [appliedPasses, setAppliedPasses] = useState([])
   const [passFetchError, setPassFetchError] = useState('')
 
@@ -61,6 +61,10 @@ function StudentHome({ currentUser }) {
     }
   }, [currentUser?.email])
 
+  const pendingPasses = appliedPasses.filter((passRequest) => passRequest.status === 'pending')
+  const approvedPasses = appliedPasses.filter((passRequest) => passRequest.status === 'approved')
+  const visiblePasses = activeView === 'approved' ? approvedPasses : pendingPasses
+
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -104,6 +108,9 @@ function StudentHome({ currentUser }) {
       alert('Pass application submitted successfully!')
       event.currentTarget.reset()
       fetchAppliedPasses()
+      if (onViewChange) {
+        onViewChange('pending')
+      }
     } catch {
       alert('Unable to reach server. Please try again.')
     }
@@ -112,101 +119,112 @@ function StudentHome({ currentUser }) {
   return (
     <main className="student-home-page">
       <section className="student-home-card" aria-labelledby="apply-pass-title">
-        <h1 id="apply-pass-title">Apply PASS</h1>
-
-        <form className="apply-pass-form" onSubmit={handleSubmit}>
-          <label htmlFor="name">Name</label>
-          <input id="name" name="name" type="text" placeholder="Enter your name" required />
-
-          <label htmlFor="registerNo">Register No</label>
-          <input id="registerNo" name="registerNo" type="text" placeholder="Enter register number" required />
-
-          <label htmlFor="year">Year</label>
-          <input id="year" name="year" type="text" placeholder="Enter year" required />
-
-          <label htmlFor="department">Department</label>
-          <input id="department" name="department" type="text" placeholder="Enter department" required />
-
-          <label htmlFor="hostelBlockNo">Hostel Block No</label>
-          <input id="hostelBlockNo" name="hostelBlockNo" type="text" placeholder="Enter hostel block no" required />
-
-          <label htmlFor="roomNo">Room No</label>
-          <input id="roomNo" name="roomNo" type="text" placeholder="Enter room no" required />
-
-          <label htmlFor="appliedOn">Date and Time of Apply</label>
-          <input id="appliedOn" name="appliedOn" type="datetime-local" value={appliedDateTime} readOnly />
-
-          <label htmlFor="address">Address</label>
-          <textarea id="address" name="address" placeholder="Enter address" rows={3} required />
-
-          <label htmlFor="leaveDateTime">Date and Time of Leaving the Hostel</label>
-          <input id="leaveDateTime" name="leaveDateTime" type="datetime-local" required />
-
-          <label htmlFor="returnDateTime">Date and Time of Coming to Hostel</label>
-          <input id="returnDateTime" name="returnDateTime" type="datetime-local" required />
-
-          <label htmlFor="phoneNo">Phone No</label>
-          <input
-            id="phoneNo"
-            name="phoneNo"
-            type="tel"
-            placeholder="Enter phone number"
-            maxLength={10}
-            inputMode="numeric"
-            required
-          />
-
-          <label htmlFor="guardianPhoneNo">Parent/Guardian Phone No</label>
-          <input
-            id="guardianPhoneNo"
-            name="guardianPhoneNo"
-            type="tel"
-            placeholder="Enter parent/guardian phone number"
-            maxLength={10}
-            inputMode="numeric"
-            required
-          />
-
-          <button type="submit">Submit PASS Application</button>
-        </form>
+        <h1 id="apply-pass-title">Student Home</h1>
 
         <div className="applied-pass-section">
-          <h2>Applied Passes</h2>
-          {passFetchError && <p className="fetch-error-text">{passFetchError}</p>}
-          {appliedPasses.length === 0 ? (
-            <p className="empty-text">No applied passes yet.</p>
-          ) : (
-            <ul className="applied-pass-list">
-              {appliedPasses.map((passRequest) => (
-                <li key={passRequest._id} className="applied-pass-item">
-                  <p>
-                    <strong>Register No:</strong> {passRequest.registerNo}
+          <div className="student-pass-content">
+            {activeView === 'apply' ? (
+              <>
+                <h2>Apply Pass</h2>
+                <form className="apply-pass-form" onSubmit={handleSubmit}>
+                  <label htmlFor="name">Name</label>
+                  <input id="name" name="name" type="text" placeholder="Enter your name" required />
+
+                  <label htmlFor="registerNo">Register No</label>
+                  <input id="registerNo" name="registerNo" type="text" placeholder="Enter register number" required />
+
+                  <label htmlFor="year">Year</label>
+                  <input id="year" name="year" type="text" placeholder="Enter year" required />
+
+                  <label htmlFor="department">Department</label>
+                  <input id="department" name="department" type="text" placeholder="Enter department" required />
+
+                  <label htmlFor="hostelBlockNo">Hostel Block No</label>
+                  <input id="hostelBlockNo" name="hostelBlockNo" type="text" placeholder="Enter hostel block no" required />
+
+                  <label htmlFor="roomNo">Room No</label>
+                  <input id="roomNo" name="roomNo" type="text" placeholder="Enter room no" required />
+
+                  <label htmlFor="appliedOn">Date and Time of Apply</label>
+                  <input id="appliedOn" name="appliedOn" type="datetime-local" value={appliedDateTime} readOnly />
+
+                  <label htmlFor="address">Address</label>
+                  <textarea id="address" name="address" placeholder="Enter address" rows={3} required />
+
+                  <label htmlFor="leaveDateTime">Date and Time of Leaving the Hostel</label>
+                  <input id="leaveDateTime" name="leaveDateTime" type="datetime-local" required />
+
+                  <label htmlFor="returnDateTime">Date and Time of Coming to Hostel</label>
+                  <input id="returnDateTime" name="returnDateTime" type="datetime-local" required />
+
+                  <label htmlFor="phoneNo">Phone No</label>
+                  <input
+                    id="phoneNo"
+                    name="phoneNo"
+                    type="tel"
+                    placeholder="Enter phone number"
+                    maxLength={10}
+                    inputMode="numeric"
+                    required
+                  />
+
+                  <label htmlFor="guardianPhoneNo">Parent/Guardian Phone No</label>
+                  <input
+                    id="guardianPhoneNo"
+                    name="guardianPhoneNo"
+                    type="tel"
+                    placeholder="Enter parent/guardian phone number"
+                    maxLength={10}
+                    inputMode="numeric"
+                    required
+                  />
+
+                  <button type="submit">Submit PASS Application</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <h2>{activeView === 'approved' ? 'Approved Passes' : 'Pending Passes'}</h2>
+                {passFetchError && <p className="fetch-error-text">{passFetchError}</p>}
+                {visiblePasses.length === 0 ? (
+                  <p className="empty-text">
+                    {activeView === 'approved' ? 'No approved passes yet.' : 'No pending passes yet.'}
                   </p>
-                  <p>
-                    <strong>Leaving:</strong> {formatDateTime(passRequest.leaveDateTime)}
-                  </p>
-                  <p>
-                    <strong>Returning:</strong> {formatDateTime(passRequest.returnDateTime)}
-                  </p>
-                  <p>
-                    <strong>Status:</strong>{' '}
-                    <span
-                      className={`pass-status ${
-                        passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
-                      }`}
-                    >
-                      {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
-                    </span>
-                  </p>
-                  {passRequest.status === 'approved' && (
-                    <p>
-                      <strong>Approved At:</strong> {formatDateTime(passRequest.approvedAt)}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                ) : (
+                  <ul className="applied-pass-list">
+                    {visiblePasses.map((passRequest) => (
+                      <li key={passRequest._id} className="applied-pass-item">
+                        <p>
+                          <strong>Register No:</strong> {passRequest.registerNo}
+                        </p>
+                        <p>
+                          <strong>Leaving:</strong> {formatDateTime(passRequest.leaveDateTime)}
+                        </p>
+                        <p>
+                          <strong>Returning:</strong> {formatDateTime(passRequest.returnDateTime)}
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{' '}
+                          <span
+                            className={`pass-status ${
+                              passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
+                            }`}
+                          >
+                            {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
+                          </span>
+                        </p>
+                        {passRequest.status === 'approved' && (
+                          <p>
+                            <strong>Approved At:</strong> {formatDateTime(passRequest.approvedAt)}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </section>
     </main>

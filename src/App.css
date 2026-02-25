@@ -84,3 +84,69 @@
 	font-weight: 600;
 }
 
+.app-side-drawer {
+	position: fixed;
+	top: 64px;
+	left: 0;
+	width: 260px;
+	max-width: 82vw;
+	height: calc(100vh - 64px);
+	padding: 1rem;
+	box-sizing: border-box;
+	background-color: rgb(214, 239, 228);
+	border-right: 1px solid rgba(255, 255, 255, 0.3);
+	transform: translateX(-100%);
+	transition: transform 0.22s ease;
+	z-index: 900;
+	display: grid;
+	gap: 0.6rem;
+	align-content: start;
+}
+
+.app-side-drawer-open {
+	transform: translateX(0);
+}
+
+.app-side-item {
+	width: 100%;
+	text-align: left;
+	padding: 0.65rem 0.8rem;
+	border: 1px solid rgba(255, 255, 255, 0.45);
+	border-radius: 8px;
+	background-color: #ffffff;
+	color: #24473b;
+	font: inherit;
+	cursor: pointer;
+}
+
+.app-side-item:hover {
+	background-color: rgb(70, 120, 100);
+	border-color: rgba(255, 255, 255, 0.9);
+	color: #ffffff;
+}
+
+.app-side-item-active {
+	background-color: rgb(70, 120, 100);
+	border-color: rgba(255, 255, 255, 0.95);
+	color: #ffffff;
+	font-weight: 600;
+}
+
+.app-main-shell {
+	width: 100%;
+	margin-left: 0;
+	transition: width 0.22s ease, margin-left 0.22s ease;
+}
+
+.app-main-shell-open {
+	width: calc(100% - 260px);
+	margin-left: 260px;
+}
+
+@media (max-width: 780px) {
+	.app-main-shell-open {
+		width: calc(100% - min(260px, 82vw));
+		margin-left: min(260px, 82vw);
+	}
+}
+
