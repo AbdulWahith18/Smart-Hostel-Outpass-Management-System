@@ -1,77 +1,104 @@
 .login-page {
 	width: 100%;
-	max-width: 420px;
+	max-width: 520px;
 	margin: 0 auto;
-	padding: 1.5rem;
+	padding: 1.75rem;
 	box-sizing: border-box;
 }
 
 .login-card {
-	border: 1px solid rgba(128, 128, 128, 0.35);
-	border-radius: 12px;
-	padding: 1.5rem;
-	background-color: #e9eef7;
+	border: var(--card-border);
+	border-radius: var(--card-radius);
+	padding: 1.65rem;
+	background-color: var(--surface-bg);
+	box-shadow: var(--shadow-soft);
 }
 
 .login-card h1 {
 	margin: 0;
-	font-size: 1.9rem;
+	font-size: 2rem;
+	line-height: 1.2;
+	color: var(--text-primary);
 }
 
 .login-subtitle {
-	margin: 0.5rem 0 1.25rem;
-	opacity: 0.85;
+	margin: 0.45rem 0 1.2rem;
+	font-size: 0.95rem;
+	color: var(--text-secondary);
 }
 
 .login-form {
 	display: grid;
-	gap: 0.75rem;
+	gap: 0.9rem;
 }
 
 .login-form label {
-	font-weight: 500;
+	font-weight: 600;
+	font-size: 0.92rem;
+	color: #304248;
 }
 
 .login-form input {
 	width: 100%;
 	box-sizing: border-box;
-	border: 1px solid rgba(128, 128, 128, 0.4);
-	border-radius: 8px;
-	padding: 0.65rem 0.75rem;
+	border: 1px solid var(--field-border);
+	border-radius: var(--input-radius);
+	padding: 0.72rem 0.8rem;
 	font: inherit;
-	background: transparent;
-	color: inherit;
+	background-color: var(--surface-bg);
+	color: var(--field-text);
+	transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
 
 .login-form select {
 	width: 100%;
 	box-sizing: border-box;
-	border: 1px solid rgba(128, 128, 128, 0.4);
-	border-radius: 8px;
-	padding: 0.65rem 0.75rem;
+	border: 1px solid var(--field-border);
+	border-radius: var(--input-radius);
+	padding: 0.72rem 0.8rem;
 	font: inherit;
-	background-color: Field;
-	color: FieldText;
+	background-color: var(--surface-bg);
+	color: var(--field-text);
+	transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
 }
 
 .login-form select option {
-	background-color: Field;
-	color: FieldText;
+	background-color: var(--surface-bg);
+	color: var(--field-text);
 }
 
 .login-form input:focus {
-	outline: 2px solid #646cff;
-	outline-offset: 1px;
+	outline: none;
+	border-color: var(--focus-color);
+	box-shadow: var(--focus-glow);
+	transform: translateY(-1px);
 }
 
 .login-form select:focus {
-	outline: 2px solid #646cff;
-	outline-offset: 1px;
+	outline: none;
+	border-color: var(--focus-color);
+	box-shadow: var(--focus-glow);
+	transform: translateY(-1px);
 }
 
 .login-form button {
 	margin-top: 0.5rem;
 	width: 100%;
+	padding: 0.78rem 1rem;
+	border-radius: var(--button-radius);
+	border: 1px solid transparent;
+	font-size: 0.98rem;
+	font-weight: 700;
+	color: #ffffff;
+	background: var(--gradient-primary);
+	box-shadow: var(--shadow-button);
+	transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.login-form button:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-button-hover);
+	filter: brightness(1.03);
 }
 
 .register-text {
@@ -82,25 +109,31 @@
 
 .register-text a {
 	font-weight: 600;
+	color: #0f4f3d;
+}
+
+.register-text a:hover {
+	color: #0b7a58;
 }
 
 .app-side-drawer {
 	position: fixed;
 	top: 64px;
 	left: 0;
-	width: 260px;
-	max-width: 82vw;
+	width: 268px;
+	max-width: 86vw;
 	height: calc(100vh - 64px);
-	padding: 1rem;
+	padding: 1.05rem 0.95rem;
 	box-sizing: border-box;
-	background-color: rgb(214, 239, 228);
-	border-right: 1px solid rgba(255, 255, 255, 0.3);
+	background: var(--gradient-sidebar);
+	border-right: 1px solid rgba(255, 255, 255, 0.2);
 	transform: translateX(-100%);
-	transition: transform 0.22s ease;
+	transition: transform 0.28s ease, box-shadow 0.28s ease;
 	z-index: 900;
 	display: grid;
-	gap: 0.6rem;
+	gap: 0.78rem;
 	align-content: start;
+	box-shadow: 10px 0 26px rgba(15, 23, 42, 0.2);
 }
 
 .app-side-drawer-open {
@@ -110,43 +143,122 @@
 .app-side-item {
 	width: 100%;
 	text-align: left;
-	padding: 0.65rem 0.8rem;
-	border: 1px solid rgba(255, 255, 255, 0.45);
-	border-radius: 8px;
-	background-color: #ffffff;
-	color: #24473b;
+	padding: 0.74rem 0.92rem;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	border-radius: 12px;
+	background-color: rgba(255, 255, 255, 0.08);
+	color: #e8f6f0;
 	font: inherit;
+	font-weight: 500;
 	cursor: pointer;
+	transition: background-color 0.24s ease, border-color 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
 }
 
 .app-side-item:hover {
-	background-color: rgb(70, 120, 100);
-	border-color: rgba(255, 255, 255, 0.9);
+	background-color: rgba(255, 255, 255, 0.18);
+	border-color: rgba(255, 255, 255, 0.72);
 	color: #ffffff;
+	transform: translateX(3px);
+	box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2);
 }
 
 .app-side-item-active {
-	background-color: rgb(70, 120, 100);
+	background-color: rgba(255, 255, 255, 0.24);
 	border-color: rgba(255, 255, 255, 0.95);
 	color: #ffffff;
-	font-weight: 600;
+	font-weight: 700;
+	box-shadow: var(--active-glow);
 }
 
 .app-main-shell {
 	width: 100%;
 	margin-left: 0;
-	transition: width 0.22s ease, margin-left 0.22s ease;
+	min-height: calc(100vh - 64px);
+	background-color: var(--page-bg);
+	transition: width 0.28s ease, margin-left 0.28s ease;
 }
 
 .app-main-shell-open {
-	width: calc(100% - 260px);
-	margin-left: 260px;
+	width: calc(100% - 268px);
+	margin-left: 268px;
+}
+
+.app-side-overlay {
+	position: fixed;
+	inset: 64px 0 0;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	width: 100%;
+	background: rgba(8, 20, 18, 0.32);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.24s ease;
+	z-index: 820;
+}
+
+.app-side-overlay-visible {
+	opacity: 1;
+	pointer-events: auto;
 }
 
 @media (max-width: 780px) {
+	.app-side-drawer {
+		width: 240px;
+		max-width: 82vw;
+	}
+
 	.app-main-shell-open {
-		width: calc(100% - min(260px, 82vw));
-		margin-left: min(260px, 82vw);
+		width: 100%;
+		margin-left: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	.login-page {
+		padding: 1rem;
+	}
+
+	.login-card {
+		padding: 1.1rem;
+	}
+
+	.login-card h1 {
+		font-size: 1.62rem;
+	}
+
+	.app-side-drawer {
+		width: 220px;
+		max-width: 75vw;
+	}
+}
+
+@media (max-width: 380px) {
+	.login-page {
+		padding: 0.8rem;
+	}
+
+	.login-card {
+		padding: 0.95rem;
+	}
+
+	.login-card h1 {
+		font-size: 1.5rem;
+	}
+
+	.login-form {
+		gap: 0.76rem;
+	}
+
+	.app-side-drawer {
+		width: 204px;
+		max-width: 78vw;
+		padding: 0.88rem 0.76rem;
+	}
+
+	.app-side-item {
+		padding: 0.64rem 0.74rem;
+		font-size: 0.92rem;
 	}
 }
 

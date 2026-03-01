@@ -14,6 +14,17 @@ const formatDateTime = (value) => {
   return value.replace('T', ' ')
 }
 
+const combineDateAndTime = (dateValue, timeValue) => {
+  const date = dateValue?.toString() ?? ''
+  const time = timeValue?.toString() ?? ''
+
+  if (!date || !time) {
+    return ''
+  }
+
+  return `${date}T${time}`
+}
+
 function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   const [appliedPasses, setAppliedPasses] = useState([])
   const [passFetchError, setPassFetchError] = useState('')
@@ -64,11 +75,31 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   const pendingPasses = appliedPasses.filter((passRequest) => passRequest.status === 'pending')
   const approvedPasses = appliedPasses.filter((passRequest) => passRequest.status === 'approved')
   const visiblePasses = activeView === 'approved' ? approvedPasses : pendingPasses
+  const totalPasses = appliedPasses.length
+  const appliedDate = appliedDateTime.slice(0, 10)
+  const appliedTime = appliedDateTime.slice(11, 16)
+
+  const handleSummaryNavigate = (view) => {
+    if (onViewChange) {
+      onViewChange(view)
+    }
+  }
+
+  const handleSummaryKeyDown = (event, view) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleSummaryNavigate(view)
+    }
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
+    const leaveDateTime = combineDateAndTime(formData.get('leaveDate'), formData.get('leaveTime'))
+    const returnDateTime = combineDateAndTime(formData.get('returnDate'), formData.get('returnTime'))
+    const appliedOn = combineDateAndTime(formData.get('appliedOnDate'), formData.get('appliedOnTime'))
+
     const passRequest = {
       studentEmail: currentUser?.email ?? '',
       studentUsername: currentUser?.username ?? '',
@@ -79,10 +110,10 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
       department: formData.get('department')?.toString() ?? '',
       hostelBlockNo: formData.get('hostelBlockNo')?.toString() ?? '',
       roomNo: formData.get('roomNo')?.toString() ?? '',
-      appliedOn: formData.get('appliedOn')?.toString() ?? '',
+      appliedOn,
       address: formData.get('address')?.toString() ?? '',
-      leaveDateTime: formData.get('leaveDateTime')?.toString() ?? '',
-      returnDateTime: formData.get('returnDateTime')?.toString() ?? '',
+      leaveDateTime,
+      returnDateTime,
       phoneNo: formData.get('phoneNo')?.toString() ?? '',
       guardianPhoneNo: formData.get('guardianPhoneNo')?.toString() ?? '',
       status: 'pending',
@@ -119,13 +150,66 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   return (
     <main className="student-home-page">
       <section className="student-home-card" aria-labelledby="apply-pass-title">
-        <h1 id="apply-pass-title">Student Home</h1>
+        <header className="student-home-header">
+          <h1 id="apply-pass-title">Student Dashboard</h1>
+          <p className="student-home-subtitle">Manage your hostel outpass applications in one place.</p>
+        </header>
+
+        <section className="student-summary-grid" aria-label="Application summary">
+          <article
+            className={`student-summary-card student-summary-card-pending student-summary-card-clickable ${
+              activeView === 'pending' ? 'student-summary-card-active' : ''
+            }`}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleSummaryNavigate('pending')}
+            onKeyDown={(event) => handleSummaryKeyDown(event, 'pending')}
+            aria-label="Open pending passes"
+          >
+            <span className="summary-icon summary-icon-pending" aria-hidden="true">
+              ⏳
+            </span>
+            <div>
+              <p className="summary-label">Pending</p>
+              <p className="summary-value">{pendingPasses.length}</p>
+            </div>
+          </article>
+
+          <article
+            className={`student-summary-card student-summary-card-approved student-summary-card-clickable ${
+              activeView === 'approved' ? 'student-summary-card-active' : ''
+            }`}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleSummaryNavigate('approved')}
+            onKeyDown={(event) => handleSummaryKeyDown(event, 'approved')}
+            aria-label="Open approved passes"
+          >
+            <span className="summary-icon summary-icon-approved" aria-hidden="true">
+              ✅
+            </span>
+            <div>
+              <p className="summary-label">Approved</p>
+              <p className="summary-value">{approvedPasses.length}</p>
+            </div>
+          </article>
+
+          <article className="student-summary-card student-summary-card-total">
+            <span className="summary-icon summary-icon-total" aria-hidden="true">
+              📄
+            </span>
+            <div>
+              <p className="summary-label">Total Applications</p>
+              <p className="summary-value">{totalPasses}</p>
+            </div>
+          </article>
+        </section>
 
         <div className="applied-pass-section">
           <div className="student-pass-content">
             {activeView === 'apply' ? (
               <>
-                <h2>Apply Pass</h2>
+                <h2>Apply for Outpass</h2>
                 <form className="apply-pass-form" onSubmit={handleSubmit}>
                   <label htmlFor="name">Name</label>
                   <input id="name" name="name" type="text" placeholder="Enter your name" required />
@@ -145,17 +229,86 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                   <label htmlFor="roomNo">Room No</label>
                   <input id="roomNo" name="roomNo" type="text" placeholder="Enter room no" required />
 
-                  <label htmlFor="appliedOn">Date and Time of Apply</label>
-                  <input id="appliedOn" name="appliedOn" type="datetime-local" value={appliedDateTime} readOnly />
+                  <div className="datetime-group">
+                    <label className="datetime-main-label" htmlFor="appliedOnDate">
+                      Date and Time of Apply
+                    </label>
+                    <div className="datetime-row">
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Date</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            📅
+                          </span>
+                          <input id="appliedOnDate" name="appliedOnDate" type="date" value={appliedDate} readOnly />
+                        </div>
+                      </div>
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Time</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            🕒
+                          </span>
+                          <input id="appliedOnTime" name="appliedOnTime" type="time" value={appliedTime} readOnly />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <label htmlFor="address">Address</label>
                   <textarea id="address" name="address" placeholder="Enter address" rows={3} required />
 
-                  <label htmlFor="leaveDateTime">Date and Time of Leaving the Hostel</label>
-                  <input id="leaveDateTime" name="leaveDateTime" type="datetime-local" required />
+                  <div className="datetime-group">
+                    <label className="datetime-main-label" htmlFor="leaveDate">
+                      Date and Time of Leaving the Hostel
+                    </label>
+                    <div className="datetime-row">
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Date</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            📅
+                          </span>
+                          <input id="leaveDate" name="leaveDate" type="date" required />
+                        </div>
+                      </div>
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Time</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            🕒
+                          </span>
+                          <input id="leaveTime" name="leaveTime" type="time" required />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                  <label htmlFor="returnDateTime">Date and Time of Coming to Hostel</label>
-                  <input id="returnDateTime" name="returnDateTime" type="datetime-local" required />
+                  <div className="datetime-group">
+                    <label className="datetime-main-label" htmlFor="returnDate">
+                      Date and Time of Coming to Hostel
+                    </label>
+                    <div className="datetime-row">
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Date</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            📅
+                          </span>
+                          <input id="returnDate" name="returnDate" type="date" required />
+                        </div>
+                      </div>
+                      <div className="datetime-field">
+                        <span className="datetime-sub-label">Time</span>
+                        <div className="datetime-input-wrap">
+                          <span className="datetime-icon" aria-hidden="true">
+                            🕒
+                          </span>
+                          <input id="returnTime" name="returnTime" type="time" required />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   <label htmlFor="phoneNo">Phone No</label>
                   <input
@@ -179,7 +332,9 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                     required
                   />
 
-                  <button type="submit">Submit PASS Application</button>
+                  <button className="student-apply-button" type="submit">
+                    Apply Now
+                  </button>
                 </form>
               </>
             ) : (
@@ -193,31 +348,54 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                 ) : (
                   <ul className="applied-pass-list">
                     {visiblePasses.map((passRequest) => (
-                      <li key={passRequest._id} className="applied-pass-item">
-                        <p>
-                          <strong>Register No:</strong> {passRequest.registerNo}
-                        </p>
-                        <p>
-                          <strong>Leaving:</strong> {formatDateTime(passRequest.leaveDateTime)}
-                        </p>
-                        <p>
-                          <strong>Returning:</strong> {formatDateTime(passRequest.returnDateTime)}
-                        </p>
-                        <p>
-                          <strong>Status:</strong>{' '}
-                          <span
-                            className={`pass-status ${
-                              passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
-                            }`}
-                          >
-                            {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
-                          </span>
-                        </p>
-                        {passRequest.status === 'approved' && (
-                          <p>
-                            <strong>Approved At:</strong> {formatDateTime(passRequest.approvedAt)}
-                          </p>
-                        )}
+                      <li
+                        key={passRequest._id}
+                        className={`applied-pass-item ${
+                          passRequest.status === 'approved' ? 'applied-pass-item-approved' : 'applied-pass-item-pending'
+                        }`}
+                      >
+                        <div className="pass-card-header">
+                          <p className="pass-card-kicker">Register Number</p>
+                          <h3 className="pass-card-register">{passRequest.registerNo}</h3>
+                        </div>
+
+                        <div className="pass-detail-grid">
+                          <div className="pass-detail-cell">
+                            <span className="pass-detail-label">Leaving</span>
+                            <span className="pass-detail-value">{formatDateTime(passRequest.leaveDateTime)}</span>
+                          </div>
+                          <div className="pass-detail-cell">
+                            <span className="pass-detail-label">Returning</span>
+                            <span className="pass-detail-value">{formatDateTime(passRequest.returnDateTime)}</span>
+                          </div>
+                        </div>
+
+                        <div className="pass-item-divider" aria-hidden="true" />
+
+                        <div className="pass-detail-grid pass-detail-grid-meta">
+                          <div className="pass-detail-cell">
+                            <span className="pass-detail-label">Status</span>
+                            <span
+                              className={`pass-status ${
+                                passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
+                              }`}
+                            >
+                              {passRequest.status === 'approved' && (
+                                <span className="pass-status-icon" aria-hidden="true">
+                                  ✔
+                                </span>
+                              )}
+                              {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
+                            </span>
+                          </div>
+
+                          {passRequest.status === 'approved' && (
+                            <div className="pass-detail-cell">
+                              <span className="pass-detail-label">Approved At</span>
+                              <span className="pass-detail-value">{formatDateTime(passRequest.approvedAt)}</span>
+                            </div>
+                          )}
+                        </div>
                       </li>
                     ))}
                   </ul>

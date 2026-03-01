@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -17,6 +17,25 @@ function App() {
   const [userType, setUserType] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isMobileNav, setIsMobileNav] = useState(false)
+
+  useEffect(() => {
+    const mediaQueryList = window.matchMedia('(max-width: 780px)')
+
+    const syncSidebarState = () => {
+      const mobileView = mediaQueryList.matches
+      setIsMobileNav(mobileView)
+      setIsSidebarOpen(!mobileView)
+    }
+
+    syncSidebarState()
+    mediaQueryList.addEventListener('change', syncSidebarState)
+
+    return () => {
+      mediaQueryList.removeEventListener('change', syncSidebarState)
+    }
+  }, [])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -42,12 +61,14 @@ function App() {
 
       if (data.user.userType === 'Student') {
         setStudentActiveView('apply')
+        setIsSidebarOpen(!isMobileNav)
         setShowStudentHome(true)
         return
       }
 
       if (data.user.userType === 'RC') {
         setRcActiveView('pending')
+        setIsSidebarOpen(!isMobileNav)
         setShowRCHome(true)
       }
     } catch {
@@ -79,6 +100,7 @@ function App() {
     setUserType('')
     setEmail('')
     setPassword('')
+    setIsSidebarOpen(false)
     setShowRegister(false)
     setShowStudentHome(false)
     setShowRCHome(false)
@@ -96,13 +118,22 @@ function App() {
   if (showStudentHome) {
     return (
       <>
-        <TopBar showLogout onLogout={handleBackToLogin} />
-        <aside className="app-side-drawer app-side-drawer-open" aria-label="Pass menu">
+        <TopBar
+          showLogout
+          showMenuToggle
+          isSidebarOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
+          onLogout={handleBackToLogin}
+        />
+        <aside className={`app-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`} aria-label="Pass menu">
           <button
             type="button"
             className={`app-side-item ${studentActiveView === 'apply' ? 'app-side-item-active' : ''}`}
             onClick={() => {
               setStudentActiveView('apply')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
             }}
           >
             Apply Pass
@@ -112,6 +143,9 @@ function App() {
             className={`app-side-item ${studentActiveView === 'pending' ? 'app-side-item-active' : ''}`}
             onClick={() => {
               setStudentActiveView('pending')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
             }}
           >
             Pending
@@ -121,12 +155,23 @@ function App() {
             className={`app-side-item ${studentActiveView === 'approved' ? 'app-side-item-active' : ''}`}
             onClick={() => {
               setStudentActiveView('approved')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
             }}
           >
             Approved
           </button>
         </aside>
-        <div className="app-main-shell app-main-shell-open">
+        {isMobileNav && (
+          <button
+            type="button"
+            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
+            aria-label="Close sidebar menu"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
           <StudentHome currentUser={currentUser} activeView={studentActiveView} onViewChange={setStudentActiveView} />
         </div>
       </>
@@ -136,13 +181,22 @@ function App() {
   if (showRCHome) {
     return (
       <>
-        <TopBar showLogout onLogout={handleBackToLogin} />
-        <aside className="app-side-drawer app-side-drawer-open" aria-label="Pass menu">
+        <TopBar
+          showLogout
+          showMenuToggle
+          isSidebarOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
+          onLogout={handleBackToLogin}
+        />
+        <aside className={`app-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`} aria-label="Pass menu">
           <button
             type="button"
             className={`app-side-item ${rcActiveView === 'pending' ? 'app-side-item-active' : ''}`}
             onClick={() => {
               setRcActiveView('pending')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
             }}
           >
             Pending
@@ -152,13 +206,24 @@ function App() {
             className={`app-side-item ${rcActiveView === 'approved' ? 'app-side-item-active' : ''}`}
             onClick={() => {
               setRcActiveView('approved')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
             }}
           >
             Approved
           </button>
         </aside>
-        <div className="app-main-shell app-main-shell-open">
-          <RCHome currentRc={currentUser} activeView={rcActiveView} />
+        {isMobileNav && (
+          <button
+            type="button"
+            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
+            aria-label="Close sidebar menu"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
+          <RCHome currentRc={currentUser} activeView={rcActiveView} onViewChange={setRcActiveView} />
         </div>
       </>
     )

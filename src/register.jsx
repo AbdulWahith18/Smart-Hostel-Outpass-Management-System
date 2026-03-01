@@ -107,6 +107,7 @@ function Register({ onBackToLogin }) {
     <main className="register-page">
       <section className="register-card" aria-labelledby="register-title">
         <h1 id="register-title">Register</h1>
+        <p className="register-subtitle">Create your account to access the hostel outpass system.</p>
 
         <form className="register-form" onSubmit={handleSubmit}>
           <label htmlFor="userType">User Type</label>

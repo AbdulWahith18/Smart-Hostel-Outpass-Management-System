@@ -1,9 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #1f2937;
-  background-color: #f5f7fb;
+  background-color: #f4f6f9;
+
+  --surface-bg: #ffffff;
+  --page-bg: #f4f6f9;
+  --text-primary: #123a2f;
+  --text-secondary: #4f5f66;
+  --field-text: #243036;
+  --field-border: rgba(48, 66, 72, 0.25);
+  --focus-color: #1f8f6b;
+  --focus-glow: 0 0 0 4px rgba(31, 143, 107, 0.15);
+  --card-border: 1px solid rgba(11, 67, 51, 0.12);
+  --card-radius: 12px;
+  --input-radius: 8px;
+  --button-radius: 10px;
+  --shadow-soft: 0 14px 28px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 8px 16px rgba(15, 23, 42, 0.06);
+  --shadow-button: 0 10px 18px rgba(13, 95, 70, 0.25);
+  --shadow-button-hover: 0 14px 24px rgba(13, 95, 70, 0.3);
+  --gradient-primary: linear-gradient(135deg, #0b7a58 0%, #0d5f46 100%);
+  --gradient-sidebar: linear-gradient(180deg, #083328 0%, #0a4947 100%);
+  --active-glow: 0 0 0 1px rgba(177, 255, 231, 0.45), 0 0 18px rgba(89, 214, 173, 0.34);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-blur: blur(10px);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,7 +46,7 @@ a:hover {
 
 body {
   margin: 0;
-  background-color: #f5f7fb;
+  background-color: var(--page-bg);
   color: #1f2937;
   min-width: 320px;
   min-height: 100vh;
@@ -69,21 +93,10 @@ button:hover {
   color: #f8fbff;
   box-shadow: 0 10px 22px rgba(31, 95, 191, 0.35);
   transform: translateY(-1px);
-  animation: button-blink 0.95s ease-in-out infinite;
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
-}
-
-@keyframes button-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.82;
-  }
 }
 
 a:hover {

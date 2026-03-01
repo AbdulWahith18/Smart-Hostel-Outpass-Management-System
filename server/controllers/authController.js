@@ -2,6 +2,34 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 
+const isDatabaseConnectionError = (error) => {
+  const message = error?.message?.toLowerCase?.() ?? ''
+
+  return (
+    message.includes('etimedout') ||
+    message.includes('server selection timed out') ||
+    message.includes('econnrefused') ||
+    message.includes('querysrv') ||
+    message.includes('topology')
+  )
+}
+
+const buildAuthErrorResponse = (error, fallbackMessage) => {
+  if (isDatabaseConnectionError(error)) {
+    return {
+      statusCode: 503,
+      message: 'Database connection issue. Please try again in a moment.',
+      error: error.message,
+    }
+  }
+
+  return {
+    statusCode: 500,
+    message: fallbackMessage,
+    error: error.message,
+  }
+}
+
 const buildToken = (user) =>
   jwt.sign(
     {
@@ -93,7 +121,8 @@ export const registerUser = async (req, res) => {
       },
     })
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to register user.', error: error.message })
+    const authError = buildAuthErrorResponse(error, 'Failed to register user.')
+    return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
   }
 }
 
@@ -135,7 +164,8 @@ export const loginUser = async (req, res) => {
       },
     })
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to login.', error: error.message })
+    const authError = buildAuthErrorResponse(error, 'Failed to login.')
+    return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
   }
 }
 
@@ -144,6 +174,7 @@ export const listRcUsers = async (_req, res) => {
     const rcUsers = await User.find({ userType: 'RC' }).select('username -_id').sort({ username: 1 })
     return res.status(200).json({ rcUsers: rcUsers.map((user) => user.username) })
   } catch (error) {
-    return res.status(500).json({ message: 'Failed to fetch RC users.', error: error.message })
+    const authError = buildAuthErrorResponse(error, 'Failed to fetch RC users.')
+    return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
   }
 }
