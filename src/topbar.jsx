@@ -26,12 +26,12 @@ function TopBar({ showLogout = false, showMenuToggle = false, isSidebarOpen = fa
 
           {showLogout && (
             <div className="top-bar-logout-group">
-              <span className="top-bar-logout-icon-wrap" aria-hidden="true">
-                <img src={logoutIcon} alt="" className="top-bar-logout-icon" />
-              </span>
               <button type="button" className="top-bar-logout" onClick={onLogout}>
                 <span>Logout</span>
               </button>
+              <span className="top-bar-logout-icon-wrap" aria-hidden="true">
+                <img src={logoutIcon} alt="" className="top-bar-logout-icon" />
+              </span>
             </div>
           )}
         </div>
