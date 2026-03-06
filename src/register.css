@@ -1,9 +1,19 @@
-.register-page {
+﻿.register-page {
 	width: 100%;
 	max-width: 520px;
 	margin: 0 auto;
 	padding: 1.75rem;
 	box-sizing: border-box;
+	height: calc(100vh - 64px);
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.register-page::-webkit-scrollbar {
+	width: 0;
+	height: 0;
 }
 
 .register-card {
@@ -81,7 +91,7 @@
 	transform: translateY(-1px);
 }
 
-.register-form button {
+.register-form button:not(.switch-link) {
 	margin-top: 0.5rem;
 	width: 100%;
 	padding: 0.78rem 1rem;
@@ -95,7 +105,7 @@
 	transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
-.register-form button:hover {
+.register-form button:not(.switch-link):hover {
 	transform: translateY(-2px);
 	box-shadow: var(--shadow-button-hover);
 	filter: brightness(1.03);
@@ -118,14 +128,14 @@
 	background: transparent;
 	font: inherit;
 	font-weight: 600;
-	color: #0f4f3d;
+	color: #005e59;
 	cursor: pointer;
 	box-shadow: none;
 }
 
 .switch-link:hover {
 	background: transparent;
-	color: #0b7a58;
+	color: #0b7a74;
 	transform: none;
 	box-shadow: none;
 	text-decoration: underline;
@@ -162,3 +172,4 @@
 		gap: 0.76rem;
 	}
 }
+
