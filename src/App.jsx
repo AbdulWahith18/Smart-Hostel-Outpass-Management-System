@@ -7,6 +7,7 @@ import MainPage from './mainpage'
 import TopBar from './topbar'
 
 function App() {
+  const rememberedLoginKey = 'rememberedLogin'
   const [showMainPage, setShowMainPage] = useState(true)
   const [showRegister, setShowRegister] = useState(false)
   const [showStudentHome, setShowStudentHome] = useState(false)
@@ -17,8 +18,34 @@ function App() {
   const [userType, setUserType] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
+  const [showForgotCard, setShowForgotCard] = useState(false)
+  const [resetIdentifier, setResetIdentifier] = useState('')
+  const [resetNewPassword, setResetNewPassword] = useState('')
+  const [resetConfirmPassword, setResetConfirmPassword] = useState('')
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileNav, setIsMobileNav] = useState(false)
+
+  useEffect(() => {
+    const rememberedLoginRaw = localStorage.getItem(rememberedLoginKey)
+    if (!rememberedLoginRaw) {
+      return
+    }
+
+    try {
+      const rememberedLogin = JSON.parse(rememberedLoginRaw)
+      if (rememberedLogin?.userType) {
+        setUserType(rememberedLogin.userType)
+      }
+      if (rememberedLogin?.email) {
+        setEmail(rememberedLogin.email)
+      }
+      setRememberMe(true)
+    } catch {
+      localStorage.removeItem(rememberedLoginKey)
+    }
+  }, [rememberedLoginKey])
 
   useEffect(() => {
     const mediaQueryList = window.matchMedia('(max-width: 780px)')
@@ -54,6 +81,18 @@ function App() {
       if (!response.ok) {
         alert(data.message ?? 'Login failed.')
         return
+      }
+
+      if (rememberMe) {
+        localStorage.setItem(
+          rememberedLoginKey,
+          JSON.stringify({
+            userType,
+            email,
+          })
+        )
+      } else {
+        localStorage.removeItem(rememberedLoginKey)
       }
 
       localStorage.setItem('authToken', data.token)
@@ -104,6 +143,55 @@ function App() {
     setShowRegister(false)
     setShowStudentHome(false)
     setShowRCHome(false)
+  }
+
+  const clearResetForm = () => {
+    setResetIdentifier('')
+    setResetNewPassword('')
+    setResetConfirmPassword('')
+  }
+
+  const handleResetPassword = async (event) => {
+    event.preventDefault()
+
+    if (!resetIdentifier.trim() || !resetNewPassword || !resetConfirmPassword) {
+      alert('Please fill username/email, new password, and confirm password.')
+      return
+    }
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      alert('New password and confirm password must match.')
+      return
+    }
+
+    setIsResettingPassword(true)
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifier: resetIdentifier,
+          newPassword: resetNewPassword,
+          confirmPassword: resetConfirmPassword,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(data.message ?? 'Failed to reset password.')
+        return
+      }
+
+      alert(data.message ?? 'Password reset successful. Please login with your new password.')
+      setShowForgotCard(false)
+      clearResetForm()
+    } catch {
+      alert('Unable to reach server. Please try again.')
+    } finally {
+      setIsResettingPassword(false)
+    }
   }
 
   if (showRegister) {
@@ -279,6 +367,43 @@ function App() {
               required
             />
 
+            <label className="login-remember-row" htmlFor="rememberMe">
+              <input
+                id="rememberMe"
+                name="rememberMe"
+                type="checkbox"
+                className="login-remember-checkbox"
+                checked={rememberMe}
+                onChange={(event) => {
+                  const checked = event.target.checked
+                  setRememberMe(checked)
+                  if (!checked) {
+                    localStorage.removeItem(rememberedLoginKey)
+                  }
+                }}
+              />
+              <span>Remember me</span>
+            </label>
+
+            <p className="login-forgot-text">
+              <a
+                className="login-forgot-link"
+                href="#"
+                onClick={(event) => {
+                  event.preventDefault()
+                  setShowForgotCard((currentValue) => {
+                    const nextValue = !currentValue
+                    if (!nextValue) {
+                      clearResetForm()
+                    }
+                    return nextValue
+                  })
+                }}
+              >
+                Forgot password?
+              </a>
+            </p>
+
             <button type="submit">Sign in</button>
             <p className="register-text">
               Don&apos;t have an account?{' '}
@@ -287,8 +412,80 @@ function App() {
               </a>
             </p>
           </form>
+
         </section>
       </main>
+
+      {showForgotCard && (
+        <div
+          className="forgot-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Reset password"
+          onClick={() => {
+            setShowForgotCard(false)
+            clearResetForm()
+          }}
+        >
+          <section className="forgot-card" onClick={(event) => event.stopPropagation()}>
+            <h2>Reset Password</h2>
+            <form className="forgot-form" onSubmit={handleResetPassword}>
+              <label htmlFor="resetIdentifier">Username or Email</label>
+              <input
+                id="resetIdentifier"
+                name="resetIdentifier"
+                type="text"
+                placeholder="Enter username or email"
+                value={resetIdentifier}
+                onChange={(event) => setResetIdentifier(event.target.value)}
+                required
+              />
+
+              <label htmlFor="resetNewPassword">New Password</label>
+              <input
+                id="resetNewPassword"
+                name="resetNewPassword"
+                type="password"
+                placeholder="Enter new password"
+                value={resetNewPassword}
+                onChange={(event) => setResetNewPassword(event.target.value)}
+                minLength={8}
+                maxLength={12}
+                required
+              />
+
+              <label htmlFor="resetConfirmPassword">Confirm New Password</label>
+              <input
+                id="resetConfirmPassword"
+                name="resetConfirmPassword"
+                type="password"
+                placeholder="Confirm new password"
+                value={resetConfirmPassword}
+                onChange={(event) => setResetConfirmPassword(event.target.value)}
+                minLength={8}
+                maxLength={12}
+                required
+              />
+
+              <div className="forgot-card-actions">
+                <button type="submit" className="forgot-submit" disabled={isResettingPassword}>
+                  {isResettingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+                <button
+                  type="button"
+                  className="forgot-cancel"
+                  onClick={() => {
+                    setShowForgotCard(false)
+                    clearResetForm()
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
     </>
   )
 }

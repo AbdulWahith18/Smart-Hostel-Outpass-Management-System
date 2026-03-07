@@ -178,3 +178,45 @@ export const listRcUsers = async (_req, res) => {
     return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
   }
 }
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { identifier = '', newPassword = '', confirmPassword = '' } = req.body
+    const normalizedIdentifier = identifier.trim()
+
+    if (!normalizedIdentifier || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'Username/email and both password fields are required.' })
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: 'New password and confirm password must match.' })
+    }
+
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          'Password must be 8-12 characters and include uppercase, lowercase, a number, and a special character.',
+      })
+    }
+
+    const isEmail = normalizedIdentifier.includes('@')
+    const user = await User.findOne(
+      isEmail
+        ? { email: normalizedIdentifier.toLowerCase() }
+        : { username: new RegExp(`^${normalizedIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+    )
+
+    if (!user) {
+      return res.status(404).json({ message: 'No account found for the provided username/email.' })
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    user.password = hashedPassword
+    await user.save()
+
+    return res.status(200).json({ message: 'Password reset successful. Please login with your new password.' })
+  } catch (error) {
+    const authError = buildAuthErrorResponse(error, 'Failed to reset password.')
+    return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
+  }
+}

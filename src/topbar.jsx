@@ -1,6 +1,7 @@
 import homsLogo from './assets/homsLogo.png'
-import logoutIcon from './assets/logout.png'
 import './topbar.css'
+
+const logoutIconSrc = `${new URL('./assets/logoutIcon.png', import.meta.url).href}${import.meta.env.DEV ? `?v=${Date.now()}` : ''}`
 
 function TopBar({ showLogout = false, showMenuToggle = false, isSidebarOpen = false, onMenuToggle, onLogout }) {
   return (
@@ -30,7 +31,7 @@ function TopBar({ showLogout = false, showMenuToggle = false, isSidebarOpen = fa
                 <span>Logout</span>
               </button>
               <span className="top-bar-logout-icon-wrap" aria-hidden="true">
-                <img src={logoutIcon} alt="" className="top-bar-logout-icon" />
+                <img src={logoutIconSrc} alt="" className="top-bar-logout-icon" />
               </span>
             </div>
           )}
