@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import authRoutes from './server/routes/authRoutes.js'
 import passRequestRoutes from './server/routes/passRequestRoutes.js'
+import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
 
@@ -19,15 +20,33 @@ app.use(
     origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   })
 )
+
 app.use(express.json())
 
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' })
 })
 
+/* TEST EMAIL ROUTE */
+app.get('/api/test-email', async (_req, res) => {
+  try {
+    await sendMail(
+      'arumparithib2@gmail.com',
+      'SMTP Test',
+      'If you received this email, SMTP is working.'
+    )
+    res.json({ message: 'Email sent successfully' })
+  } catch (err) {
+    console.error('TEST EMAIL ERROR:', err)
+    res.status(500).json({ message: 'Email failed', error: err.message })
+  }
+})
+
+/* API ROUTES */
 app.use('/api/auth', authRoutes)
 app.use('/api/pass-requests', passRequestRoutes)
 
+/* DATABASE CONNECTION */
 mongoose
   .connect(process.env.MONGO_URI, {
     family: 4,

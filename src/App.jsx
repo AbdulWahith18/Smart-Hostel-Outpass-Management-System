@@ -21,8 +21,12 @@ function App() {
   const [rememberMe, setRememberMe] = useState(false)
   const [showForgotCard, setShowForgotCard] = useState(false)
   const [resetIdentifier, setResetIdentifier] = useState('')
+  const [resetOtp, setResetOtp] = useState('')
   const [resetNewPassword, setResetNewPassword] = useState('')
   const [resetConfirmPassword, setResetConfirmPassword] = useState('')
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [isOtpVerified, setIsOtpVerified] = useState(false)
   const [isResettingPassword, setIsResettingPassword] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobileNav, setIsMobileNav] = useState(false)
@@ -147,15 +151,86 @@ function App() {
 
   const clearResetForm = () => {
     setResetIdentifier('')
+    setResetOtp('')
     setResetNewPassword('')
     setResetConfirmPassword('')
+    setIsOtpVerified(false)
+  }
+
+  const handleSendOtp = async () => {
+    if (!resetIdentifier.trim()) {
+      alert('Please enter username/email first.')
+      return
+    }
+
+    setIsSendingOtp(true)
+    try {
+      const response = await fetch('/api/auth/forgot-password/send-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier: resetIdentifier }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        alert(data.message ?? 'Failed to send OTP.')
+        return
+      }
+
+      setIsOtpVerified(false)
+      alert(data.message ?? 'OTP sent to your registered email.')
+    } catch {
+      alert('Unable to reach server. Please try again.')
+    } finally {
+      setIsSendingOtp(false)
+    }
+  }
+
+  const handleVerifyOtp = async () => {
+    if (!resetIdentifier.trim() || !resetOtp.trim()) {
+      alert('Please enter username/email and OTP.')
+      return
+    }
+
+    setIsVerifyingOtp(true)
+    try {
+      const response = await fetch('/api/auth/forgot-password/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier: resetIdentifier, otp: resetOtp }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setIsOtpVerified(false)
+        alert(data.message ?? 'Failed to verify OTP.')
+        return
+      }
+
+      setIsOtpVerified(true)
+      alert(data.message ?? 'OTP verified successfully.')
+    } catch {
+      setIsOtpVerified(false)
+      alert('Unable to reach server. Please try again.')
+    } finally {
+      setIsVerifyingOtp(false)
+    }
   }
 
   const handleResetPassword = async (event) => {
     event.preventDefault()
 
-    if (!resetIdentifier.trim() || !resetNewPassword || !resetConfirmPassword) {
-      alert('Please fill username/email, new password, and confirm password.')
+    if (!resetIdentifier.trim() || !resetOtp.trim() || !resetNewPassword || !resetConfirmPassword) {
+      alert('Please fill username/email, OTP, new password, and confirm password.')
+      return
+    }
+
+    if (!isOtpVerified) {
+      alert('Please verify OTP before updating password.')
       return
     }
 
@@ -173,6 +248,7 @@ function App() {
         },
         body: JSON.stringify({
           identifier: resetIdentifier,
+          otp: resetOtp,
           newPassword: resetNewPassword,
           confirmPassword: resetConfirmPassword,
         }),
@@ -431,15 +507,59 @@ function App() {
             <h2>Reset Password</h2>
             <form className="forgot-form" onSubmit={handleResetPassword}>
               <label htmlFor="resetIdentifier">Username or Email</label>
-              <input
-                id="resetIdentifier"
-                name="resetIdentifier"
-                type="text"
-                placeholder="Enter username or email"
-                value={resetIdentifier}
-                onChange={(event) => setResetIdentifier(event.target.value)}
-                required
-              />
+              <div className="forgot-inline-group">
+                <input
+                  id="resetIdentifier"
+                  name="resetIdentifier"
+                  type="text"
+                  placeholder="Enter username or email"
+                  value={resetIdentifier}
+                  onChange={(event) => {
+                    setResetIdentifier(event.target.value)
+                    setIsOtpVerified(false)
+                  }}
+                  required
+                />
+                <button
+                  type="button"
+                  className="forgot-secondary"
+                  onClick={handleSendOtp}
+                  disabled={isSendingOtp || isVerifyingOtp || isResettingPassword}
+                >
+                  {isSendingOtp ? 'Sending...' : 'Send OTP'}
+                </button>
+              </div>
+
+              <label htmlFor="resetOtp">OTP</label>
+              <div className="forgot-inline-group">
+                <input
+                  id="resetOtp"
+                  name="resetOtp"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  placeholder="Enter 6-digit OTP"
+                  value={resetOtp}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, '')
+                    setResetOtp(value)
+                    setIsOtpVerified(false)
+                  }}
+                  required
+                />
+                <button
+                  type="button"
+                  className="forgot-secondary"
+                  onClick={handleVerifyOtp}
+                  disabled={isSendingOtp || isVerifyingOtp || isResettingPassword}
+                >
+                  {isVerifyingOtp ? 'Verifying...' : isOtpVerified ? 'Verified' : 'Verify OTP'}
+                </button>
+              </div>
+              <p className={`forgot-status ${isOtpVerified ? 'forgot-status-success' : 'forgot-status-muted'}`}>
+                {isOtpVerified ? 'OTP verified. You can now reset your password.' : 'Send OTP and verify it first.'}
+              </p>
 
               <label htmlFor="resetNewPassword">New Password</label>
               <input

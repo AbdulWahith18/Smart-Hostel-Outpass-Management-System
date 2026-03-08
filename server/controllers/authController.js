@@ -1,6 +1,26 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
+import { sendMail } from '../utils/sendMail.js'
+
+const OTP_EXPIRY_MINUTES = 10
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const findUserByIdentifier = async (identifier) => {
+  const normalizedIdentifier = identifier.trim()
+  const isEmail = normalizedIdentifier.includes('@')
+
+  return User.findOne(
+    isEmail
+      ? { email: normalizedIdentifier.toLowerCase() }
+      : { username: new RegExp(`^${escapeRegex(normalizedIdentifier)}$`, 'i') }
+  )
+}
+
+const sendPasswordResetOtpEmail = async ({ to, otp }) => {
+  await sendMail(to, 'Password Reset OTP', `Your password reset OTP is ${otp}. It is valid for ${OTP_EXPIRY_MINUTES} minutes.`)
+}
 
 const isDatabaseConnectionError = (error) => {
   const message = error?.message?.toLowerCase?.() ?? ''
@@ -181,11 +201,12 @@ export const listRcUsers = async (_req, res) => {
 
 export const resetPassword = async (req, res) => {
   try {
-    const { identifier = '', newPassword = '', confirmPassword = '' } = req.body
-    const normalizedIdentifier = identifier.trim()
+    const { identifier = '', email = '', otp = '', newPassword = '', confirmPassword = '' } = req.body
+    const normalizedIdentifier = (identifier || email).trim()
+    const normalizedOtp = String(otp).trim()
 
-    if (!normalizedIdentifier || !newPassword || !confirmPassword) {
-      return res.status(400).json({ message: 'Username/email and both password fields are required.' })
+    if (!normalizedIdentifier || !normalizedOtp || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: 'Username/email, OTP, and both password fields are required.' })
     }
 
     if (newPassword !== confirmPassword) {
@@ -199,24 +220,169 @@ export const resetPassword = async (req, res) => {
       })
     }
 
-    const isEmail = normalizedIdentifier.includes('@')
-    const user = await User.findOne(
-      isEmail
-        ? { email: normalizedIdentifier.toLowerCase() }
-        : { username: new RegExp(`^${normalizedIdentifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
-    )
+    const user = await findUserByIdentifier(normalizedIdentifier)
 
     if (!user) {
       return res.status(404).json({ message: 'No account found for the provided username/email.' })
     }
 
+    if (!user.otp || user.otp !== normalizedOtp) {
+      return res.status(400).json({ message: 'Invalid OTP.' })
+    }
+
+    if (!user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+      return res.status(400).json({ message: 'OTP has expired. Please request a new OTP.' })
+    }
+
+    if (!user.otpVerified) {
+      return res.status(400).json({ message: 'Please verify OTP before resetting password.' })
+    }
+
     const hashedPassword = await bcrypt.hash(newPassword, 10)
     user.password = hashedPassword
+    user.otp = null
+    user.otpExpires = null
+    user.otpVerified = false
+    user.passwordResetOtp = null
+    user.passwordResetOtpExpiresAt = null
+    user.passwordResetOtpVerified = false
     await user.save()
 
     return res.status(200).json({ message: 'Password reset successful. Please login with your new password.' })
   } catch (error) {
     const authError = buildAuthErrorResponse(error, 'Failed to reset password.')
     return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
+  }
+}
+
+export const sendForgotPasswordOtp = async (req, res) => {
+  console.log("🔥 SEND OTP ROUTE HIT", req.body)
+  try {
+    const { identifier = "", email = "" } = req.body
+    const normalizedIdentifier = (identifier || email).trim()
+
+    if (!normalizedIdentifier) {
+      return res.status(400).json({ message: "Username/email is required." })
+    }
+
+    const user = await findUserByIdentifier(normalizedIdentifier)
+
+    if (!user) {
+      return res.status(404).json({
+        message: "No account found for the provided username/email."
+      })
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000))
+
+    user.otp = otp
+    user.otpExpires = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000)
+    user.otpVerified = false
+
+    user.passwordResetOtp = otp
+    user.passwordResetOtpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000)
+    user.passwordResetOtpVerified = false
+
+    await user.save()
+
+    try {
+      console.log("📧 Attempting to send OTP email to:", user.email)
+
+      await sendPasswordResetOtpEmail({
+        to: user.email,
+        otp
+      })
+
+      console.log("✅ OTP email sent successfully")
+
+    } catch (mailError) {
+
+      console.error("❌ EMAIL ERROR:", mailError)
+
+      user.otp = null
+      user.otpExpires = null
+      user.otpVerified = false
+
+      user.passwordResetOtp = null
+      user.passwordResetOtpExpiresAt = null
+      user.passwordResetOtpVerified = false
+
+      await user.save()
+
+      return res.status(500).json({
+        message: "Failed to send OTP email. Please try again.",
+        error: mailError.message
+      })
+    }
+
+    return res.status(200).json({
+      message: "OTP sent to your registered email."
+    })
+
+  } catch (error) {
+
+    console.error("❌ SEND OTP ERROR:", error)
+
+    const authError = buildAuthErrorResponse(error, "Failed to send OTP.")
+
+    return res.status(authError.statusCode).json({
+      message: authError.message,
+      error: authError.error
+    })
+  }
+}
+
+export const verifyForgotPasswordOtp = async (req, res) => {
+  try {
+    const { identifier = "", email = "", otp = "" } = req.body
+
+    const normalizedIdentifier = (identifier || email).trim()
+    const normalizedOtp = String(otp).trim()
+
+    if (!normalizedIdentifier || !normalizedOtp) {
+      return res.status(400).json({
+        message: "Username/email and OTP are required."
+      })
+    }
+
+    const user = await findUserByIdentifier(normalizedIdentifier)
+
+    if (!user) {
+      return res.status(404).json({
+        message: "No account found for the provided username/email."
+      })
+    }
+
+    if (!user.otp || user.otp !== normalizedOtp) {
+      return res.status(400).json({
+        message: "Invalid OTP."
+      })
+    }
+
+    if (!user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+      return res.status(400).json({
+        message: "OTP has expired. Please request a new OTP."
+      })
+    }
+
+    user.otpVerified = true
+    user.passwordResetOtpVerified = true
+
+    await user.save()
+
+    return res.status(200).json({
+      message: "OTP verified successfully."
+    })
+
+  } catch (error) {
+
+    console.error("❌ VERIFY OTP ERROR:", error)
+
+    const authError = buildAuthErrorResponse(error, "Failed to verify OTP.")
+
+    return res.status(authError.statusCode).json({
+      message: authError.message,
+      error: authError.error
+    })
   }
 }
