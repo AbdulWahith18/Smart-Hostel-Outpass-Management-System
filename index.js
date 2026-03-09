@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import authRoutes from './server/routes/authRoutes.js'
 import passRequestRoutes from './server/routes/passRequestRoutes.js'
+import adminRoutes from './server/routes/adminRoutes.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -45,6 +46,7 @@ app.get('/api/test-email', async (_req, res) => {
 /* API ROUTES */
 app.use('/api/auth', authRoutes)
 app.use('/api/pass-requests', passRequestRoutes)
+app.use('/api/admin', adminRoutes)
 
 /* DATABASE CONNECTION */
 mongoose

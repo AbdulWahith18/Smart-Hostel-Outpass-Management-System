@@ -3,6 +3,7 @@ import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
 import RCHome from './rchome'
+import AdminHome from './adminhome'
 import MainPage from './mainpage'
 import TopBar from './topbar'
 
@@ -12,8 +13,10 @@ function App() {
   const [showRegister, setShowRegister] = useState(false)
   const [showStudentHome, setShowStudentHome] = useState(false)
   const [showRCHome, setShowRCHome] = useState(false)
+  const [showAdminHome, setShowAdminHome] = useState(false)
   const [studentActiveView, setStudentActiveView] = useState('apply')
   const [rcActiveView, setRcActiveView] = useState('pending')
+  const [adminActiveView, setAdminActiveView] = useState('view')
   const [currentUser, setCurrentUser] = useState(null)
   const [userType, setUserType] = useState('')
   const [email, setEmail] = useState('')
@@ -113,6 +116,13 @@ function App() {
         setRcActiveView('pending')
         setIsSidebarOpen(!isMobileNav)
         setShowRCHome(true)
+        return
+      }
+
+      if (data.user.userType === 'Admin') {
+        setAdminActiveView('view')
+        setIsSidebarOpen(!isMobileNav)
+        setShowAdminHome(true)
       }
     } catch {
       alert('Unable to reach server. Please try again.')
@@ -140,6 +150,7 @@ function App() {
     setCurrentUser(null)
     setStudentActiveView('apply')
     setRcActiveView('pending')
+    setAdminActiveView('view')
     setUserType('')
     setEmail('')
     setPassword('')
@@ -147,6 +158,7 @@ function App() {
     setShowRegister(false)
     setShowStudentHome(false)
     setShowRCHome(false)
+    setShowAdminHome(false)
   }
 
   const clearResetForm = () => {
@@ -393,6 +405,62 @@ function App() {
     )
   }
 
+  if (showAdminHome) {
+    return (
+      <>
+        <TopBar
+          showLogout
+          showMenuToggle
+          isSidebarOpen={isSidebarOpen}
+          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
+          onLogout={handleBackToLogin}
+        />
+        <aside
+          className={`app-side-drawer admin-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`}
+          aria-label="Admin menu"
+        >
+          <button
+            type="button"
+            className={`app-side-item admin-side-card ${adminActiveView === 'view' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setAdminActiveView('view')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
+            }}
+          >
+            <span className="admin-side-card-kicker">Users</span>
+            <span className="admin-side-card-title">View Users</span>
+          </button>
+          <button
+            type="button"
+            className={`app-side-item admin-side-card ${adminActiveView === 'manage' ? 'app-side-item-active' : ''}`}
+            onClick={() => {
+              setAdminActiveView('manage')
+              if (isMobileNav) {
+                setIsSidebarOpen(false)
+              }
+            }}
+          >
+            <span className="admin-side-card-kicker">Control</span>
+            <span className="admin-side-card-title">Manage Users</span>
+          </button>
+        </aside>
+        {isMobileNav && (
+          <button
+            type="button"
+            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
+            aria-label="Close sidebar menu"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
+          <AdminHome currentUser={currentUser} activeView={adminActiveView} onViewChange={setAdminActiveView} />
+        </div>
+      </>
+    )
+  }
+
   if (showMainPage) {
     return <MainPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} />
   }
@@ -419,6 +487,7 @@ function App() {
               </option>
               <option value="Student">Student</option>
               <option value="RC">RC</option>
+              <option value="Admin">Admin</option>
             </select>
 
             <label htmlFor="email">Email</label>

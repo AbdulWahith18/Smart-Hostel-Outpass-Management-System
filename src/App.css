@@ -369,6 +369,47 @@
 	box-shadow: var(--active-glow);
 }
 
+.admin-side-drawer {
+	gap: 0.9rem;
+}
+
+.admin-side-card {
+	display: grid;
+	gap: 0.18rem;
+	padding: 0.82rem 0.92rem;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.34);
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+	box-shadow: 0 8px 16px rgba(9, 25, 24, 0.22);
+	transform: none;
+}
+
+.admin-side-card:hover {
+	transform: translateY(-2px);
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+	box-shadow: 0 12px 18px rgba(7, 24, 22, 0.26), var(--shadow-hover-glow);
+}
+
+.admin-side-card.app-side-item-active {
+	background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.16));
+	border-color: rgba(255, 255, 255, 0.95);
+	box-shadow: 0 0 0 1px rgba(206, 242, 239, 0.36), 0 14px 22px rgba(9, 25, 24, 0.24), var(--active-glow);
+}
+
+.admin-side-card-kicker {
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(232, 246, 240, 0.86);
+}
+
+.admin-side-card-title {
+	font-size: 0.97rem;
+	font-weight: 700;
+	color: #ffffff;
+}
+
 .app-main-shell {
 	width: 100%;
 	margin-left: 0;
