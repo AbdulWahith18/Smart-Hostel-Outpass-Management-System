@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { io } from 'socket.io-client'
 import './studenthome.css'
 
 const formatDateTime = (value) => {
@@ -61,14 +62,53 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   }
 
   useEffect(() => {
+    const studentEmail = currentUser?.email?.trim().toLowerCase() ?? ''
+
     fetchAppliedPasses()
 
     const intervalId = setInterval(() => {
       fetchAppliedPasses()
     }, 5000)
 
+    if (!studentEmail) {
+      return () => {
+        clearInterval(intervalId)
+      }
+    }
+
+    const socket = io('/', {
+      transports: ['websocket', 'polling'],
+    })
+
+    socket.emit('student:join', { studentEmail })
+
+    const upsertPassRequest = (incomingRequest) => {
+      if (!incomingRequest?._id) {
+        return
+      }
+
+      setAppliedPasses((previousRequests) => {
+        const existingIndex = previousRequests.findIndex((request) => request._id === incomingRequest._id)
+
+        if (existingIndex === -1) {
+          return [incomingRequest, ...previousRequests]
+        }
+
+        return previousRequests.map((request) =>
+          request._id === incomingRequest._id ? incomingRequest : request
+        )
+      })
+    }
+
+    socket.on('pass:new', upsertPassRequest)
+    socket.on('pass:updated', upsertPassRequest)
+
     return () => {
       clearInterval(intervalId)
+      socket.emit('student:leave', { studentEmail })
+      socket.off('pass:new', upsertPassRequest)
+      socket.off('pass:updated', upsertPassRequest)
+      socket.disconnect()
     }
   }, [currentUser?.email])
 

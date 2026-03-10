@@ -22,6 +22,13 @@ export const createPassRequest = async (req, res) => {
     }
 
     const passRequest = await PassRequest.create(payload)
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`rc:${passRequest.authorizedRc}`).emit('pass:new', passRequest)
+      io.to(`student:${passRequest.studentEmail}`).emit('pass:new', passRequest)
+    }
+
     return res.status(201).json({ message: 'Pass application submitted successfully.', passRequest })
   } catch (error) {
     return res.status(500).json({ message: 'Failed to submit pass request.', error: error.message })
@@ -91,6 +98,12 @@ export const approvePassRequest = async (req, res) => {
     passRequest.status = 'approved'
     passRequest.approvedAt = new Date().toISOString()
     await passRequest.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`rc:${passRequest.authorizedRc}`).emit('pass:updated', passRequest)
+      io.to(`student:${passRequest.studentEmail}`).emit('pass:updated', passRequest)
+    }
 
     return res.status(200).json({ message: 'Pass approved successfully.', passRequest })
   } catch (error) {

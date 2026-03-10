@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs } from 'react-icons/fa'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -55,7 +56,7 @@ function App() {
   }, [rememberedLoginKey])
 
   useEffect(() => {
-    const mediaQueryList = window.matchMedia('(max-width: 780px)')
+    const mediaQueryList = window.matchMedia('(max-width: 767px)')
 
     const syncSidebarState = () => {
       const mobileView = mediaQueryList.matches
@@ -282,6 +283,71 @@ function App() {
     }
   }
 
+  const renderDashboardLayout = ({ menuItems, activeView, onViewChange, sidebarAriaLabel, navAriaLabel, content }) => (
+    <>
+      <TopBar
+        showLogout
+        showMenuToggle={false}
+        isSidebarOpen={isSidebarOpen}
+        onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
+        onLogout={handleBackToLogin}
+      />
+      <div className="bg-slate-50 pt-16">
+        <div className="flex min-h-[calc(100vh-64px)]">
+          <aside
+            className={`relative sticky top-16 h-[calc(100vh-64px)] shrink-0 border-r border-teal-200/40 bg-gradient-to-b from-teal-700 to-teal-800 text-teal-50 shadow-lg transition-all duration-300 ease-in-out ${
+              isSidebarOpen ? 'w-64' : 'w-16'
+            }`}
+            aria-label={sidebarAriaLabel}
+          >
+            <button
+              type="button"
+              className="absolute top-8 -right-4 z-30 rounded-full border border-teal-200 bg-white p-1.5 text-teal-700 shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:bg-teal-50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+              aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+              aria-expanded={isSidebarOpen}
+              onClick={() => setIsSidebarOpen((previousState) => !previousState)}
+            >
+              {isSidebarOpen ? <FaChevronLeft className="h-3.5 w-3.5" /> : <FaChevronRight className="h-3.5 w-3.5" />}
+            </button>
+
+            <nav className="flex h-full flex-col space-y-4 px-2.5 py-6" aria-label={navAriaLabel}>
+              {menuItems.map((item) => {
+                const isActive = activeView === item.key
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`group relative flex w-full items-center gap-3 rounded-xl py-3 text-sm font-semibold transition-all duration-300 ease-in-out ${
+                      isActive
+                        ? 'border-l-4 border-white bg-white/20 text-white shadow-[0_10px_20px_rgba(2,132,199,0.2)]'
+                        : 'border-l-4 border-transparent bg-white/10 text-teal-100 backdrop-blur-md hover:bg-white/20 hover:text-white'
+                    } ${isSidebarOpen ? 'justify-start px-4 hover:translate-x-0.5' : 'justify-center px-0'}`}
+                    onClick={() => onViewChange(item.key)}
+                    aria-label={item.label}
+                  >
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-[15px]">
+                      {item.icon}
+                    </span>
+
+                    {isSidebarOpen ? (
+                      <span className="whitespace-nowrap tracking-wide transition-opacity duration-300 ease-in-out">{item.label}</span>
+                    ) : (
+                      <span className="pointer-events-none absolute left-full top-1/2 z-40 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg border border-slate-700 bg-slate-900/95 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-all duration-200 group-hover:opacity-100">
+                        {item.label}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </nav>
+          </aside>
+
+          <div className="min-w-0 flex-1 transition-all duration-300 ease-in-out">{content}</div>
+        </div>
+      </div>
+    </>
+  )
+
   if (showRegister) {
     return (
       <>
@@ -292,173 +358,52 @@ function App() {
   }
 
   if (showStudentHome) {
-    return (
-      <>
-        <TopBar
-          showLogout
-          showMenuToggle
-          isSidebarOpen={isSidebarOpen}
-          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
-          onLogout={handleBackToLogin}
-        />
-        <aside className={`app-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`} aria-label="Pass menu">
-          <button
-            type="button"
-            className={`app-side-item ${studentActiveView === 'apply' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setStudentActiveView('apply')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            Apply Pass
-          </button>
-          <button
-            type="button"
-            className={`app-side-item ${studentActiveView === 'pending' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setStudentActiveView('pending')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            Pending
-          </button>
-          <button
-            type="button"
-            className={`app-side-item ${studentActiveView === 'approved' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setStudentActiveView('approved')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            Approved
-          </button>
-        </aside>
-        {isMobileNav && (
-          <button
-            type="button"
-            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
-            aria-label="Close sidebar menu"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
-          <StudentHome currentUser={currentUser} activeView={studentActiveView} onViewChange={setStudentActiveView} />
-        </div>
-      </>
-    )
+    const studentMenuItems = [
+      { key: 'apply', label: 'Apply Pass', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
+    ]
+
+    return renderDashboardLayout({
+      menuItems: studentMenuItems,
+      activeView: studentActiveView,
+      onViewChange: setStudentActiveView,
+      sidebarAriaLabel: 'Student pass menu',
+      navAriaLabel: 'Student navigation',
+      content: <StudentHome currentUser={currentUser} activeView={studentActiveView} onViewChange={setStudentActiveView} />,
+    })
   }
 
   if (showRCHome) {
-    return (
-      <>
-        <TopBar
-          showLogout
-          showMenuToggle
-          isSidebarOpen={isSidebarOpen}
-          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
-          onLogout={handleBackToLogin}
-        />
-        <aside className={`app-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`} aria-label="Pass menu">
-          <button
-            type="button"
-            className={`app-side-item ${rcActiveView === 'pending' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setRcActiveView('pending')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            Pending
-          </button>
-          <button
-            type="button"
-            className={`app-side-item ${rcActiveView === 'approved' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setRcActiveView('approved')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            Approved
-          </button>
-        </aside>
-        {isMobileNav && (
-          <button
-            type="button"
-            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
-            aria-label="Close sidebar menu"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
-          <RCHome currentRc={currentUser} activeView={rcActiveView} onViewChange={setRcActiveView} />
-        </div>
-      </>
-    )
+    const rcMenuItems = [
+      { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
+    ]
+
+    return renderDashboardLayout({
+      menuItems: rcMenuItems,
+      activeView: rcActiveView,
+      onViewChange: setRcActiveView,
+      sidebarAriaLabel: 'RC pass menu',
+      navAriaLabel: 'RC navigation',
+      content: <RCHome currentRc={currentUser} activeView={rcActiveView} onViewChange={setRcActiveView} />,
+    })
   }
 
   if (showAdminHome) {
-    return (
-      <>
-        <TopBar
-          showLogout
-          showMenuToggle
-          isSidebarOpen={isSidebarOpen}
-          onMenuToggle={() => setIsSidebarOpen((previousState) => !previousState)}
-          onLogout={handleBackToLogin}
-        />
-        <aside
-          className={`app-side-drawer admin-side-drawer ${isSidebarOpen ? 'app-side-drawer-open' : ''}`}
-          aria-label="Admin menu"
-        >
-          <button
-            type="button"
-            className={`app-side-item admin-side-card ${adminActiveView === 'view' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setAdminActiveView('view')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            <span className="admin-side-card-kicker">Users</span>
-            <span className="admin-side-card-title">View Users</span>
-          </button>
-          <button
-            type="button"
-            className={`app-side-item admin-side-card ${adminActiveView === 'manage' ? 'app-side-item-active' : ''}`}
-            onClick={() => {
-              setAdminActiveView('manage')
-              if (isMobileNav) {
-                setIsSidebarOpen(false)
-              }
-            }}
-          >
-            <span className="admin-side-card-kicker">Control</span>
-            <span className="admin-side-card-title">Manage Users</span>
-          </button>
-        </aside>
-        {isMobileNav && (
-          <button
-            type="button"
-            className={`app-side-overlay ${isSidebarOpen ? 'app-side-overlay-visible' : ''}`}
-            aria-label="Close sidebar menu"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        <div className={`app-main-shell ${!isMobileNav ? 'app-main-shell-open' : ''}`}>
-          <AdminHome currentUser={currentUser} activeView={adminActiveView} onViewChange={setAdminActiveView} />
-        </div>
-      </>
-    )
+    const adminMenuItems = [
+      { key: 'view', label: 'View Users', icon: <FaUsers className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
+    ]
+
+    return renderDashboardLayout({
+      menuItems: adminMenuItems,
+      activeView: adminActiveView,
+      onViewChange: setAdminActiveView,
+      sidebarAriaLabel: 'Admin menu',
+      navAriaLabel: 'Admin navigation',
+      content: <AdminHome currentUser={currentUser} activeView={adminActiveView} onViewChange={setAdminActiveView} />,
+    })
   }
 
   if (showMainPage) {

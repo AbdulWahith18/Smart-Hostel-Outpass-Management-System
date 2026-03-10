@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { io } from 'socket.io-client'
 import './rchome.css'
 
 const formatDateTime = (value) => {
@@ -18,14 +19,16 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
   const [requestsForRc, setRequestsForRc] = useState([])
 
   useEffect(() => {
+    const rcUsername = currentRc?.username?.trim() ?? ''
+
     const fetchRequests = async () => {
-      if (!currentRc?.username) {
+      if (!rcUsername) {
         setRequestsForRc([])
         return
       }
 
       try {
-        const response = await fetch(`/api/pass-requests/rc/${encodeURIComponent(currentRc.username)}`)
+        const response = await fetch(`/api/pass-requests/rc/${encodeURIComponent(rcUsername)}`)
         const data = await response.json()
 
         if (!response.ok) {
@@ -40,6 +43,44 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
     }
 
     fetchRequests()
+
+    if (!rcUsername) {
+      return
+    }
+
+    const socket = io('/', {
+      transports: ['websocket', 'polling'],
+    })
+
+    socket.emit('rc:join', { rcUsername })
+
+    const upsertRequest = (incomingRequest) => {
+      if (!incomingRequest?._id) {
+        return
+      }
+
+      setRequestsForRc((previousRequests) => {
+        const existingIndex = previousRequests.findIndex((request) => request._id === incomingRequest._id)
+
+        if (existingIndex === -1) {
+          return [incomingRequest, ...previousRequests]
+        }
+
+        return previousRequests.map((request) =>
+          request._id === incomingRequest._id ? incomingRequest : request
+        )
+      })
+    }
+
+    socket.on('pass:new', upsertRequest)
+    socket.on('pass:updated', upsertRequest)
+
+    return () => {
+      socket.emit('rc:leave', { rcUsername })
+      socket.off('pass:new', upsertRequest)
+      socket.off('pass:updated', upsertRequest)
+      socket.disconnect()
+    }
   }, [currentRc?.username])
 
   const pendingRequests = requestsForRc.filter((request) => request.status === 'pending')
