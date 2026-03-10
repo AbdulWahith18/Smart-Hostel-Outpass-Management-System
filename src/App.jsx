@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar } from 'react-icons/fa'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -378,6 +378,7 @@ function App() {
     const rcMenuItems = [
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 
     return renderDashboardLayout({
@@ -394,6 +395,7 @@ function App() {
     const adminMenuItems = [
       { key: 'view', label: 'View Users', icon: <FaUsers className="h-4 w-4" aria-hidden="true" /> },
       { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 
     return renderDashboardLayout({

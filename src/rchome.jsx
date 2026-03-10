@@ -17,6 +17,43 @@ const formatDateTime = (value) => {
 
 function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
   const [requestsForRc, setRequestsForRc] = useState([])
+  const [aiInsights, setAiInsights] = useState([])
+  const [aiGeneratedAt, setAiGeneratedAt] = useState('')
+  const [isAiLoading, setIsAiLoading] = useState(true)
+  const [aiErrorMessage, setAiErrorMessage] = useState('')
+  const isAnalyticsView = activeView === 'analytics'
+
+  const fetchAiSnapshot = async () => {
+    setIsAiLoading(true)
+
+    try {
+      const token = localStorage.getItem('authToken')
+      const response = await fetch('/api/admin/ai-analytics/snapshot', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setAiErrorMessage(data.message ?? 'AI insights are not available right now.')
+        setAiInsights([])
+        setAiGeneratedAt('')
+        return
+      }
+
+      setAiErrorMessage('')
+      setAiInsights(Array.isArray(data.insights) ? data.insights : [])
+      setAiGeneratedAt(data.generatedAt ?? '')
+    } catch {
+      setAiErrorMessage('Unable to load AI insights currently.')
+      setAiInsights([])
+      setAiGeneratedAt('')
+    } finally {
+      setIsAiLoading(false)
+    }
+  }
 
   useEffect(() => {
     const rcUsername = currentRc?.username?.trim() ?? ''
@@ -82,6 +119,14 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       socket.disconnect()
     }
   }, [currentRc?.username])
+
+  useEffect(() => {
+    if (activeView !== 'analytics') {
+      return
+    }
+
+    fetchAiSnapshot()
+  }, [activeView])
 
   const pendingRequests = requestsForRc.filter((request) => request.status === 'pending')
   const approvedRequests = requestsForRc.filter((request) => request.status === 'approved')
@@ -184,6 +229,45 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
           </article>
         </section>
 
+        {isAnalyticsView && (
+          <section className="rc-analytics-wrap" aria-label="RC AI analytics snapshot">
+            <p className="rc-analytics-kicker">AI Powered Insights (Admin Generated)</p>
+            <div className="rc-analytics-card">
+              <div className="rc-analytics-header-row">
+                <h3 className="rc-analytics-title">AI Analytics Snapshot</h3>
+                <button type="button" className="rc-approve-button" onClick={fetchAiSnapshot}>
+                  Refresh Snapshot
+                </button>
+              </div>
+
+              {isAiLoading && <p className="rc-analytics-state">Loading latest AI insights...</p>}
+
+              {!isAiLoading && aiErrorMessage && <p className="rc-analytics-state rc-analytics-state-error">{aiErrorMessage}</p>}
+
+              {!isAiLoading && !aiErrorMessage && aiInsights.length === 0 && (
+                <p className="rc-analytics-state">No AI insights available yet.</p>
+              )}
+
+              {!isAiLoading && !aiErrorMessage && aiInsights.length > 0 && (
+                <>
+                  <ul className="rc-analytics-insights">
+                    {aiInsights.map((insight, index) => (
+                      <li key={`${insight}-${index}`} className="rc-analytics-insight-item">
+                        <span className="rc-analytics-insight-dot" aria-hidden="true" />
+                        <span>{insight}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {aiGeneratedAt && (
+                    <p className="rc-analytics-updated">Updated: {new Date(aiGeneratedAt).toLocaleString()}</p>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
+        {!isAnalyticsView && (
         <div className="pass-section">
           <h2>
             {activeView === 'approved'
@@ -314,6 +398,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
             </ul>
           )}
         </div>
+        )}
       </section>
     </main>
   )

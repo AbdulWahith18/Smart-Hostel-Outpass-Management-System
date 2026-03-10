@@ -58,6 +58,11 @@ const passRequestSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    reason: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     leaveDateTime: {
       type: String,
       required: true,

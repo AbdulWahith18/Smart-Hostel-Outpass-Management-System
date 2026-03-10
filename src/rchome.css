@@ -307,6 +307,98 @@
 	filter: brightness(1.03);
 }
 
+.rc-analytics-wrap {
+	width: 100%;
+	max-width: 860px;
+	margin: 0.5rem auto 0;
+}
+
+.rc-analytics-kicker {
+	margin: 0;
+	font-size: 0.76rem;
+	color: #64748b;
+	font-style: italic;
+	letter-spacing: 0.02em;
+}
+
+.rc-analytics-card {
+	margin-top: 0.55rem;
+	border-radius: 16px;
+	border: 1px solid rgba(0, 94, 89, 0.2);
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 250, 249, 0.96));
+	box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+	padding: 1.15rem;
+}
+
+.rc-analytics-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 0.95rem;
+}
+
+.rc-analytics-title {
+	margin: 0;
+	font-size: 1.12rem;
+	font-weight: 700;
+	color: #0b7a74;
+}
+
+.rc-analytics-state {
+	margin: 0;
+	padding: 0.75rem 0.85rem;
+	border-radius: 12px;
+	border: 1px solid rgba(0, 94, 89, 0.18);
+	background: rgba(240, 250, 249, 0.92);
+	font-size: 0.9rem;
+	color: #2f4650;
+}
+
+.rc-analytics-state-error {
+	border-color: rgba(159, 47, 47, 0.22);
+	background: rgba(255, 244, 244, 0.95);
+	color: #9f2f2f;
+}
+
+.rc-analytics-insights {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 0.62rem;
+}
+
+.rc-analytics-insight-item {
+	display: grid;
+	grid-template-columns: 12px minmax(0, 1fr);
+	align-items: start;
+	gap: 0.6rem;
+	border: 1px solid rgba(0, 94, 89, 0.15);
+	border-radius: 12px;
+	padding: 0.68rem 0.78rem;
+	background: #ffffff;
+	font-size: 0.9rem;
+	color: #23343d;
+	line-height: 1.45;
+}
+
+.rc-analytics-insight-dot {
+	width: 9px;
+	height: 9px;
+	margin-top: 0.36rem;
+	border-radius: 999px;
+	background: linear-gradient(135deg, #0b7a74 0%, #005e59 100%);
+	box-shadow: 0 0 0 3px rgba(11, 122, 116, 0.14);
+}
+
+.rc-analytics-updated {
+	margin: 0.72rem 0 0;
+	font-size: 0.76rem;
+	color: #6b7280;
+	font-style: italic;
+}
+
 .pass-item.approved {
 	opacity: 1;
 }
@@ -361,6 +453,15 @@
 	.rc-pass-approval-grid {
 		grid-template-columns: 1fr;
 		gap: 0.55rem;
+	}
+
+	.rc-analytics-header-row {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.rc-analytics-title {
+		font-size: 1.02rem;
 	}
 }
 

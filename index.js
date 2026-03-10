@@ -7,6 +7,8 @@ import { Server as SocketIOServer } from 'socket.io'
 import authRoutes from './server/routes/authRoutes.js'
 import passRequestRoutes from './server/routes/passRequestRoutes.js'
 import adminRoutes from './server/routes/adminRoutes.js'
+import analyticsRoutes from './server/routes/analyticsRoutes.js'
+import aiRoutes from './server/routes/aiRoutes.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -103,6 +105,8 @@ app.get('/api/test-email', async (_req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/pass-requests', passRequestRoutes)
 app.use('/api/admin', adminRoutes)
+app.use('/api/admin', analyticsRoutes)
+app.use('/api/ai', aiRoutes)
 
 /* DATABASE CONNECTION */
 mongoose

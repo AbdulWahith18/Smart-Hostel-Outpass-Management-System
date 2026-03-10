@@ -163,11 +163,18 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid login details.' })
     }
 
+    if (user.status === 'inactive') {
+      return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' })
+    }
+
     const isPasswordMatch = await bcrypt.compare(password, user.password)
 
     if (!isPasswordMatch) {
       return res.status(401).json({ message: 'Invalid login details.' })
     }
+
+    user.lastLogin = new Date()
+    await user.save()
 
     const token = buildToken(user)
 
@@ -181,6 +188,8 @@ export const loginUser = async (req, res) => {
         email: user.email,
         mobileNo: user.mobileNo,
         authorizedRc: user.authorizedRc,
+        status: user.status,
+        lastLogin: user.lastLogin,
       },
     })
   } catch (error) {

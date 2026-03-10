@@ -29,6 +29,10 @@ const combineDateAndTime = (dateValue, timeValue) => {
 function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
   const [appliedPasses, setAppliedPasses] = useState([])
   const [passFetchError, setPassFetchError] = useState('')
+  const [reason, setReason] = useState('')
+  const [aiResult, setAiResult] = useState('')
+  const [aiError, setAiError] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   const appliedDateTime = useMemo(() => {
     const now = new Date()
@@ -132,6 +136,42 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
     }
   }
 
+  const analyzeReason = async (reasonValue) => {
+    const normalizedReason = reasonValue?.toString().trim() ?? ''
+
+    if (!normalizedReason) {
+      setAiError('Please enter a reason to analyze.')
+      setAiResult('')
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAiError('')
+
+    try {
+      const res = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: normalizedReason }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setAiError(data.error ?? data.message ?? 'Failed to analyze reason with AI.')
+        setAiResult('')
+        return
+      }
+
+      setAiResult(data.aiAnalysis ?? '')
+    } catch {
+      setAiError('Unable to reach AI service. Please try again.')
+      setAiResult('')
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault()
 
@@ -152,6 +192,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
       roomNo: formData.get('roomNo')?.toString() ?? '',
       appliedOn,
       address: formData.get('address')?.toString() ?? '',
+      reason: formData.get('reason')?.toString() ?? '',
       leaveDateTime,
       returnDateTime,
       phoneNo: formData.get('phoneNo')?.toString() ?? '',
@@ -178,6 +219,9 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
       alert('Pass application submitted successfully!')
       event.currentTarget.reset()
+      setReason('')
+      setAiResult('')
+      setAiError('')
       fetchAppliedPasses()
       if (onViewChange) {
         onViewChange('pending')
@@ -297,6 +341,36 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
                   <label htmlFor="address">Address</label>
                   <textarea id="address" name="address" placeholder="Enter address" rows={3} required />
+
+                  <label htmlFor="reason">Reason for Outpass</label>
+                  <textarea
+                    id="reason"
+                    name="reason"
+                    placeholder="Enter reason for outpass"
+                    rows={3}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                    required
+                  />
+
+                  <button
+                    className="w-full max-w-xl mx-auto"
+                    type="button"
+                    onClick={() => analyzeReason(reason)}
+                    disabled={isAnalyzing}
+                  >
+                    {isAnalyzing ? 'Analyzing...' : 'Analyze Reason'}
+                  </button>
+
+                  {(aiResult || aiError) && (
+                    <div className="w-full max-w-xl mx-auto bg-white rounded-xl shadow-md border p-4 mt-4">
+                      <p className="text-sm font-semibold text-teal-700 mb-2">AI Suggestion</p>
+                      <div className="bg-teal-50 border border-teal-200 rounded-lg p-3 text-sm text-gray-700">
+                        {aiError ? <p>{aiError}</p> : <p className="whitespace-pre-line">{aiResult}</p>}
+                      </div>
+                      <p className="text-xs text-gray-500 italic mt-2">AI Generated Insight</p>
+                    </div>
+                  )}
 
                   <div className="datetime-group">
                     <label className="datetime-main-label" htmlFor="leaveDate">

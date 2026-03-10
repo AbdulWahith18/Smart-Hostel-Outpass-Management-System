@@ -33,6 +33,15 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
+    },
     otp: {
       type: String,
       default: null,

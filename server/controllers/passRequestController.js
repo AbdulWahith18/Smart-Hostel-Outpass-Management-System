@@ -7,6 +7,7 @@ export const createPassRequest = async (req, res) => {
       studentEmail: req.body.studentEmail?.trim().toLowerCase() ?? '',
       studentUsername: req.body.studentUsername?.trim() ?? '',
       authorizedRc: req.body.authorizedRc?.trim() ?? '',
+      reason: req.body.reason?.trim() ?? '',
       phoneNo: req.body.phoneNo?.trim() ?? '',
       guardianPhoneNo: req.body.guardianPhoneNo?.trim() ?? '',
       status: 'pending',
@@ -15,6 +16,10 @@ export const createPassRequest = async (req, res) => {
 
     if (!payload.studentEmail || !payload.studentUsername || !payload.authorizedRc) {
       return res.status(400).json({ message: 'Student identity and authorized RC are required.' })
+    }
+
+    if (!payload.reason) {
+      return res.status(400).json({ message: 'Reason is required.' })
     }
 
     if (!/^[0-9]{10}$/.test(payload.phoneNo) || !/^[0-9]{10}$/.test(payload.guardianPhoneNo)) {
