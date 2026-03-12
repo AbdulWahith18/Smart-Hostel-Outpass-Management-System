@@ -1,14 +1,33 @@
-﻿.register-page {
+﻿/* ════════════════════════════════════════════════════════════════════════════
+   CLEAN MINIMAL REGISTRATION PAGE DESIGN
+═════════════════════════════════════════════════════════════════════════════ */
+
+body:has(.register-page) {
+	margin: 0;
+	padding: 0;
+	background: linear-gradient(135deg, #f0f7f6 0%, #f5faf9 100%);
+	min-height: 100vh;
+}
+
+.register-page {
 	width: 100%;
-	max-width: 520px;
-	margin: 64px auto 0;
-	padding: 1.75rem;
+	min-height: 100vh;
+	padding-top: 80px;
+	padding-left: 1.5rem;
+	padding-right: 1.5rem;
+	padding-bottom: 3rem;
 	box-sizing: border-box;
-	height: calc(100vh - 64px);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
 	overflow-y: auto;
+	overflow-x: hidden;
 	-webkit-overflow-scrolling: touch;
 	-ms-overflow-style: none;
 	scrollbar-width: none;
+	animation: pageSlideUp 0.6s ease-out;
+	z-index: 20;
 }
 
 .register-page::-webkit-scrollbar {
@@ -16,160 +35,359 @@
 	height: 0;
 }
 
-.register-card {
-	border: var(--card-border);
-	border-radius: var(--card-radius);
-	padding: 1.65rem;
-	background-color: var(--surface-bg);
-	box-shadow: var(--shadow-soft);
+@keyframes pageSlideUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   REGISTER CARD
+───────────────────────────────────────────────────────────────────────────── */
+
+.register-card {
+	position: relative;
+	width: 100%;
+	max-width: 450px;
+	padding: 2.5rem 2.25rem;
+	box-sizing: border-box;
+	margin-top: clamp(2rem, 10vh, 6rem);
+	margin-bottom: 2rem;
+	background: #f5f9f8;
+	border: none;
+	border-radius: 16px;
+	box-shadow: 0 2px 8px rgba(15, 78, 74, 0.06);
+	transition: all 0.3s ease;
+	transform: translateY(0) scale(1);
+	animation: cardFadeIn 0.7s ease-out 0.1s backwards;
+	z-index: 30;
+}
+
+@keyframes cardFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(30px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.register-card:hover {
+	box-shadow: 0 4px 12px rgba(15, 78, 74, 0.08);
+	transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   CARD HEADER
+───────────────────────────────────────────────────────────────────────────── */
+
 .register-card h1 {
-	margin: 0;
+	margin: 0 0 0.75rem 0;
 	font-size: 2rem;
+	font-weight: 700;
 	line-height: 1.2;
-	color: var(--text-primary);
+	color: #0f766e;
+	letter-spacing: -0.5px;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .register-subtitle {
-	margin: 0.45rem 0 1.2rem;
+	margin: 0 0 2rem 0;
 	font-size: 0.95rem;
-	color: var(--text-secondary);
+	font-weight: 400;
+	color: #667d85;
+	line-height: 1.6;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FORM CONTAINER
+───────────────────────────────────────────────────────────────────────────── */
 
 .register-form {
 	display: grid;
-	gap: 0.9rem;
+	gap: 1.5rem;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FORM LABELS
+───────────────────────────────────────────────────────────────────────────── */
 
 .register-form label {
-	font-weight: 600;
-	font-size: 0.92rem;
-	color: #304248;
+	display: block;
+	margin-bottom: 0.6rem;
+	font-weight: 700;
+	font-size: 0.8rem;
+	color: #0f766e;
+	letter-spacing: 0.5px;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	text-transform: uppercase;
 }
 
-.register-form input {
-	width: 100%;
-	box-sizing: border-box;
-	border: 1px solid var(--field-border);
-	border-radius: var(--input-radius);
-	padding: 0.72rem 0.8rem;
-	font: inherit;
-	background-color: var(--surface-bg);
-	color: var(--field-text);
-	transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   INPUT FIELDS
+───────────────────────────────────────────────────────────────────────────── */
 
+.register-form input,
 .register-form select {
 	width: 100%;
 	box-sizing: border-box;
-	border: 1px solid var(--field-border);
-	border-radius: var(--input-radius);
-	padding: 0.72rem 0.8rem;
-	font: inherit;
-	background-color: var(--surface-bg);
-	color: var(--field-text);
-	transition: border-color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
+	padding: 0.95rem 1.1rem;
+	font-size: 0.95rem;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	border: 1px solid #e0ebe8;
+	border-radius: 10px;
+	background: #ffffff;
+	color: #0f4f4a;
+	transition: all 0.3s ease;
+}
+
+.register-form input::placeholder {
+	color: #b0c5c1;
+	font-weight: 400;
+}
+
+.register-form input:hover {
+	border-color: #b3e6e0;
+	background: #ffffff;
+}
+
+.register-form input:focus,
+.register-form select:focus {
+	outline: none;
+	border-color: #14b8a6;
+	background: #ffffff;
+	box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.register-form select {
+	cursor: pointer;
+	appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f766e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	background-size: 1.25rem 1.25rem;
+	padding-right: 2.75rem;
 }
 
 .register-form select option {
-	background-color: var(--surface-bg);
-	color: var(--field-text);
+	background: #ffffff;
+	color: #0f4f4a;
+	padding: 0.5rem;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.register-form input:focus {
-	outline: none;
-	border-color: var(--focus-color);
-	box-shadow: var(--focus-glow);
-	transform: translateY(-1px);
-}
-
-.register-form select:focus {
-	outline: none;
-	border-color: var(--focus-color);
-	box-shadow: var(--focus-glow);
-	transform: translateY(-1px);
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   SUBMIT BUTTON
+───────────────────────────────────────────────────────────────────────────── */
 
 .register-form button:not(.switch-link) {
-	margin-top: 0.5rem;
+	margin-top: 1.5rem;
 	width: 100%;
-	padding: 0.78rem 1rem;
-	border-radius: var(--button-radius);
-	border: 1px solid transparent;
-	font-size: 0.98rem;
+	padding: 1rem 1.5rem;
+	font-size: 0.95rem;
 	font-weight: 700;
 	color: #ffffff;
-	background: var(--gradient-primary);
-	box-shadow: var(--shadow-button);
-	transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+	border: none;
+	border-radius: 10px;
+	background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+	box-shadow: 0 4px 12px rgba(20, 184, 166, 0.25);
+	cursor: pointer;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+	letter-spacing: 0.3px;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
 }
 
 .register-form button:not(.switch-link):hover {
 	transform: translateY(-2px);
-	box-shadow: var(--shadow-button-hover);
-	filter: brightness(1.03);
+	box-shadow: 0 6px 16px rgba(20, 184, 166, 0.35);
+}
+
+.register-form button:not(.switch-link):active {
+	transform: translateY(0);
+	box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
 }
 
 .demo-flow-button {
 	margin-top: 0;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────
+   SWITCH LINK
+───────────────────────────────────────────────────────────────────────────── */
+
 .switch-text {
-	margin: 0.25rem 0 0;
+	margin: 1.5rem 0 0 0;
 	text-align: center;
-	font-size: 0.95rem;
+	font-size: 0.9rem;
+	color: #667d85;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .switch-link {
-	border: 0;
+	border: none;
 	padding: 0;
 	margin: 0;
 	background: transparent;
 	font: inherit;
-	font-weight: 600;
-	color: #005e59;
+	font-weight: 700;
+	font-size: 0.9rem;
+	color: #0f766e;
 	cursor: pointer;
 	box-shadow: none;
+	transition: color 0.3s ease;
+	font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .switch-link:hover {
-	background: transparent;
-	color: #0b7a74;
-	transform: none;
-	box-shadow: none;
-	text-decoration: underline;
+	color: #14b8a6;
 }
 
-@media (max-width: 640px) {
-	.register-page {
-		padding: 1rem;
-	}
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN - TABLET
+───────────────────────────────────────────────────────────────────────────── */
 
+@media (max-width: 768px) {
 	.register-card {
-		padding: 1.1rem;
+		padding: 2rem 1.75rem;
+		max-width: 420px;
 	}
 
 	.register-card h1 {
-		font-size: 1.62rem;
+		font-size: 1.625rem;
+	}
+
+	.register-form {
+		gap: 1.25rem;
+	}
+
+	.register-form button:not(.switch-link) {
+		padding: 0.9rem 1.25rem;
+		font-size: 0.9rem;
 	}
 }
 
-@media (max-width: 380px) {
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN - MOBILE
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
 	.register-page {
-		padding: 0.8rem;
+		padding-top: 70px;
+		padding-left: 1rem;
+		padding-right: 1rem;
+		padding-bottom: 2rem;
+		min-height: auto;
 	}
 
 	.register-card {
-		padding: 0.95rem;
+		padding: 1.75rem 1.5rem;
+		max-width: 100%;
+		border-radius: 14px;
+		margin-top: clamp(1rem, 8vh, 3rem);
+		margin-bottom: 1.5rem;
 	}
 
 	.register-card h1 {
 		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.register-subtitle {
+		font-size: 0.9rem;
+		margin-bottom: 1.5rem;
 	}
 
 	.register-form {
-		gap: 0.76rem;
+		gap: 1.1rem;
+	}
+
+	.register-form label {
+		font-size: 0.75rem;
+		margin-bottom: 0.45rem;
+	}
+
+	.register-form input,
+	.register-form select {
+		padding: 0.8rem 0.9rem;
+		font-size: 0.9rem;
+	}
+
+	.register-form button:not(.switch-link) {
+		margin-top: 1rem;
+		padding: 0.85rem 1rem;
+		font-size: 0.9rem;
+	}
+
+	.switch-text {
+		margin-top: 1rem;
+		font-size: 0.85rem;
+	}
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   RESPONSIVE DESIGN - SMALL MOBILE
+───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 380px) {
+	.register-page {
+		padding-top: 65px;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+		padding-bottom: 1.5rem;
+	}
+
+	.register-card {
+		padding: 1.5rem 1.25rem;
+		border-radius: 12px;
+		max-width: 100%;
+		margin-top: clamp(0.75rem, 6vh, 2rem);
+		margin-bottom: 1rem;
+	}
+
+	.register-card h1 {
+		font-size: 1.375rem;
+		margin-bottom: 0.4rem;
+	}
+
+	.register-subtitle {
+		font-size: 0.85rem;
+		margin-bottom: 1.25rem;
+	}
+
+	.register-form {
+		gap: 0.95rem;
+	}
+
+	.register-form label {
+		font-size: 0.7rem;
+	}
+
+	.register-form input,
+	.register-form select {
+		padding: 0.75rem 0.8rem;
+		font-size: 0.85rem;
+		border-radius: 8px;
+	}
+
+	.register-form button:not(.switch-link) {
+		margin-top: 0.85rem;
+		padding: 0.8rem 0.9rem;
+		font-size: 0.85rem;
+	}
+
+	.switch-text {
+		margin-top: 0.85rem;
+		font-size: 0.8rem;
 	}
 }
 
