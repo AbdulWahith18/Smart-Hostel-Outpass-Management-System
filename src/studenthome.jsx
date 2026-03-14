@@ -233,7 +233,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
   return (
     <main className="student-home-page">
-      <section className="student-home-card" aria-labelledby="apply-pass-title">
+      <section className="student-home-card saas-card fade-in" aria-labelledby="apply-pass-title">
         <header className="student-home-header">
           <h1 id="apply-pass-title">Student Dashboard</h1>
           <p className="student-home-subtitle">Manage your hostel outpass applications in one place.</p>
@@ -241,7 +241,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
         <section className="student-summary-grid" aria-label="Application summary">
           <article
-            className={`student-summary-card student-summary-card-pending student-summary-card-clickable ${
+            className={`student-summary-card dashboard-card hover-lift student-summary-card-pending student-summary-card-clickable ${
               activeView === 'pending' ? 'student-summary-card-active' : ''
             }`}
             role="button"
@@ -260,7 +260,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
           </article>
 
           <article
-            className={`student-summary-card student-summary-card-approved student-summary-card-clickable ${
+            className={`student-summary-card dashboard-card hover-lift student-summary-card-approved student-summary-card-clickable ${
               activeView === 'approved' ? 'student-summary-card-active' : ''
             }`}
             role="button"
@@ -278,7 +278,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
             </div>
           </article>
 
-          <article className="student-summary-card student-summary-card-total">
+          <article className="student-summary-card dashboard-card hover-lift student-summary-card-total">
             <span className="summary-icon summary-icon-total" aria-hidden="true">
               📄
             </span>
@@ -296,22 +296,22 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                 <h2>Apply for Outpass</h2>
                 <form className="apply-pass-form" onSubmit={handleSubmit}>
                   <label htmlFor="name">Name</label>
-                  <input id="name" name="name" type="text" placeholder="Enter your name" required />
+                  <input className="input" id="name" name="name" type="text" placeholder="Enter your name" required />
 
                   <label htmlFor="registerNo">Register No</label>
-                  <input id="registerNo" name="registerNo" type="text" placeholder="Enter register number" required />
+                  <input className="input" id="registerNo" name="registerNo" type="text" placeholder="Enter register number" required />
 
                   <label htmlFor="year">Year</label>
-                  <input id="year" name="year" type="text" placeholder="Enter year" required />
+                  <input className="input" id="year" name="year" type="text" placeholder="Enter year" required />
 
                   <label htmlFor="department">Department</label>
-                  <input id="department" name="department" type="text" placeholder="Enter department" required />
+                  <input className="input" id="department" name="department" type="text" placeholder="Enter department" required />
 
                   <label htmlFor="hostelBlockNo">Hostel Block No</label>
-                  <input id="hostelBlockNo" name="hostelBlockNo" type="text" placeholder="Enter hostel block no" required />
+                  <input className="input" id="hostelBlockNo" name="hostelBlockNo" type="text" placeholder="Enter hostel block no" required />
 
                   <label htmlFor="roomNo">Room No</label>
-                  <input id="roomNo" name="roomNo" type="text" placeholder="Enter room no" required />
+                  <input className="input" id="roomNo" name="roomNo" type="text" placeholder="Enter room no" required />
 
                   <div className="datetime-group">
                     <label className="datetime-main-label" htmlFor="appliedOnDate">
@@ -324,7 +324,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             📅
                           </span>
-                          <input id="appliedOnDate" name="appliedOnDate" type="date" value={appliedDate} readOnly />
+                          <input className="input" id="appliedOnDate" name="appliedOnDate" type="date" value={appliedDate} readOnly />
                         </div>
                       </div>
                       <div className="datetime-field">
@@ -333,17 +333,18 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             🕒
                           </span>
-                          <input id="appliedOnTime" name="appliedOnTime" type="time" value={appliedTime} readOnly />
+                          <input className="input" id="appliedOnTime" name="appliedOnTime" type="time" value={appliedTime} readOnly />
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <label htmlFor="address">Address</label>
-                  <textarea id="address" name="address" placeholder="Enter address" rows={3} required />
+                  <textarea className="input" id="address" name="address" placeholder="Enter address" rows={3} required />
 
                   <label htmlFor="reason">Reason for Outpass</label>
                   <textarea
+                    className="input"
                     id="reason"
                     name="reason"
                     placeholder="Enter reason for outpass"
@@ -354,7 +355,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                   />
 
                   <button
-                    className="w-full max-w-xl mx-auto"
+                    className="btn btn-outline hover-lift w-full max-w-xl mx-auto"
                     type="button"
                     onClick={() => analyzeReason(reason)}
                     disabled={isAnalyzing}
@@ -383,7 +384,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             📅
                           </span>
-                          <input id="leaveDate" name="leaveDate" type="date" required />
+                          <input className="input" id="leaveDate" name="leaveDate" type="date" required />
                         </div>
                       </div>
                       <div className="datetime-field">
@@ -392,7 +393,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             🕒
                           </span>
-                          <input id="leaveTime" name="leaveTime" type="time" required />
+                          <input className="input" id="leaveTime" name="leaveTime" type="time" required />
                         </div>
                       </div>
                     </div>
@@ -409,7 +410,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             📅
                           </span>
-                          <input id="returnDate" name="returnDate" type="date" required />
+                          <input className="input" id="returnDate" name="returnDate" type="date" required />
                         </div>
                       </div>
                       <div className="datetime-field">
@@ -418,7 +419,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                           <span className="datetime-icon" aria-hidden="true">
                             🕒
                           </span>
-                          <input id="returnTime" name="returnTime" type="time" required />
+                          <input className="input" id="returnTime" name="returnTime" type="time" required />
                         </div>
                       </div>
                     </div>
@@ -426,6 +427,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
                   <label htmlFor="phoneNo">Phone No</label>
                   <input
+                    className="input"
                     id="phoneNo"
                     name="phoneNo"
                     type="tel"
@@ -437,6 +439,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
                   <label htmlFor="guardianPhoneNo">Parent/Guardian Phone No</label>
                   <input
+                    className="input"
                     id="guardianPhoneNo"
                     name="guardianPhoneNo"
                     type="tel"
@@ -446,7 +449,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                     required
                   />
 
-                  <button className="student-apply-button" type="submit">
+                  <button className="student-apply-button btn btn-primary hover-lift" type="submit">
                     Apply Now
                   </button>
                 </form>

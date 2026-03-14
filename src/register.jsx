@@ -105,13 +105,14 @@ function Register({ onBackToLogin }) {
 
   return (
     <main className="register-page">
-      <section className="register-card" aria-labelledby="register-title">
+      <section className="register-card saas-card fade-in" aria-labelledby="register-title">
         <h1 id="register-title">Register</h1>
         <p className="register-subtitle">Create your account to access the hostel outpass system.</p>
 
         <form className="register-form" onSubmit={handleSubmit}>
           <label htmlFor="userType">User Type</label>
           <select
+            className="input"
             id="userType"
             name="userType"
             value={userType}
@@ -137,6 +138,7 @@ function Register({ onBackToLogin }) {
             <>
               <label htmlFor="authorizedRc">Authorized RC</label>
               <select
+                className="input"
                 id="authorizedRc"
                 name="authorizedRc"
                 value={authorizedRc}
@@ -156,13 +158,14 @@ function Register({ onBackToLogin }) {
           )}
 
           <label htmlFor="username">Username</label>
-          <input id="username" name="username" type="text" placeholder="Enter username" required />
+          <input className="input" id="username" name="username" type="text" placeholder="Enter username" required />
 
           <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com" required />
+          <input className="input" id="email" name="email" type="email" placeholder="you@example.com" required />
 
           <label htmlFor="mobileno">Mobile No</label>
           <input
+            className="input"
             id="mobileno"
             name="mobileno"
             type="tel"
@@ -174,6 +177,7 @@ function Register({ onBackToLogin }) {
 
           <label htmlFor="password">Password</label>
           <input
+            className="input"
             id="password"
             name="password"
             type="password"
@@ -185,6 +189,7 @@ function Register({ onBackToLogin }) {
 
           <label htmlFor="confirmPassword">Re-enter Password</label>
           <input
+            className="input"
             id="confirmPassword"
             name="confirmPassword"
             type="password"
@@ -192,12 +197,12 @@ function Register({ onBackToLogin }) {
             required
           />
 
-          <button type="submit">Create Account</button>
+          <button type="submit" className="btn btn-primary hover-lift">Create Account</button>
 
           {onBackToLogin && (
             <p className="switch-text">
               Already have an account?{' '}
-              <button type="button" className="switch-link" onClick={onBackToLogin}>
+              <button type="button" className="switch-link btn btn-outline hover-lift" onClick={onBackToLogin}>
                 Sign in
               </button>
             </p>

@@ -13,8 +13,6 @@
 	overflow-y: auto;
 	overflow-x: hidden;
 	-webkit-overflow-scrolling: touch;
-	-ms-overflow-style: none;
-	scrollbar-width: none;
 	animation: pageSlideUp 0.6s ease-out;
 	z-index: 20;
 }
@@ -22,13 +20,12 @@
 body:has(.login-page) {
 	margin: 0;
 	padding: 0;
-	background: linear-gradient(135deg, #f0f7f6 0%, #f5faf9 100%);
+	background:
+		radial-gradient(circle at 10% 20%, rgba(20, 184, 166, .08), transparent 35%),
+		radial-gradient(circle at 90% 10%, rgba(99, 102, 241, .06), transparent 40%),
+		radial-gradient(circle at 40% 90%, rgba(20, 184, 166, .05), transparent 35%),
+		#f8fafc;
 	min-height: 100vh;
-}
-
-.login-page::-webkit-scrollbar {
-	width: 0;
-	height: 0;
 }
 
 @keyframes pageSlideUp {
@@ -50,11 +47,6 @@ body:has(.login-page) {
 	box-sizing: border-box;
 	margin-top: clamp(2rem, 10vh, 6rem);
 	margin-bottom: 2rem;
-	background: #f5f9f8;
-	border: none;
-	border-radius: 16px;
-	box-shadow: 0 2px 8px rgba(15, 78, 74, 0.06);
-	transition: all 0.3s ease;
 	transform: translateY(0) scale(1);
 	animation: cardFadeIn 0.7s ease-out 0.1s backwards;
 	z-index: 30;
@@ -69,11 +61,6 @@ body:has(.login-page) {
 		opacity: 1;
 		transform: translateY(0) scale(1);
 	}
-}
-
-.login-card:hover {
-	box-shadow: 0 4px 12px rgba(15, 78, 74, 0.08);
-	transform: translateY(-2px);
 }
 
 .login-card h1 {
@@ -325,18 +312,20 @@ body:has(.login-page) {
 	margin-top: 0;
 	padding: 0.62rem 0.78rem;
 	border-radius: 10px;
-	border: 1px solid rgba(0, 94, 89, 0.3);
-	background: #ffffff;
-	color: #0b7a74;
+	border: 1px solid transparent;
+	background: var(--gradient-primary);
+	color: #ffffff;
+	box-shadow: var(--shadow-button);
 	font-weight: 600;
 	font-size: 0.85rem;
 	cursor: pointer;
-	transition: transform 0.2s ease, background 0.2s ease;
+	transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .forgot-secondary:hover {
-	background: #eef8f7;
-	transform: translateY(-1px);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-button-hover);
+	filter: brightness(1.03);
 }
 
 .forgot-secondary:disabled {
@@ -393,17 +382,16 @@ body:has(.login-page) {
 }
 
 .forgot-cancel {
-	border: 1px solid rgba(0, 94, 89, 0.3);
-	background: #ffffff;
-	color: #0b7a74;
-	box-shadow: none;
+	border: 1px solid transparent;
+	background: var(--gradient-primary);
+	color: #ffffff;
+	box-shadow: var(--shadow-button);
 }
 
 .forgot-cancel:hover {
-	background: #eef8f7;
-	transform: translateY(-1px);
-	box-shadow: 0 8px 14px rgba(15, 23, 42, 0.08);
-	filter: none;
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-button-hover);
+	filter: brightness(1.03);
 }
 
 .login-form select:focus {
@@ -457,7 +445,7 @@ body:has(.login-page) {
 	height: calc(100vh - 64px);
 	padding: 1.05rem 0.95rem;
 	box-sizing: border-box;
-	background: var(--gradient-sidebar);
+	background: linear-gradient(160deg, #0f766e, #042f2e);
 	border-right: 1px solid rgba(255, 255, 255, 0.2);
 	transform: translateX(-100%);
 	transition: transform 0.28s ease, box-shadow 0.28s ease;
@@ -465,7 +453,7 @@ body:has(.login-page) {
 	display: grid;
 	gap: 0.78rem;
 	align-content: start;
-	box-shadow: 10px 0 26px rgba(15, 23, 42, 0.2);
+	box-shadow: 10px 0 40px rgba(0, 0, 0, 0.35);
 }
 
 .app-side-drawer-open {
@@ -475,7 +463,7 @@ body:has(.login-page) {
 .app-side-item {
 	width: 100%;
 	text-align: left;
-	padding: 0.74rem 0.92rem;
+	padding: 0.7rem 0.9rem;
 	border: 1px solid rgba(255, 255, 255, 0.28);
 	border-radius: 12px;
 	background-color: rgba(255, 255, 255, 0.08);
@@ -487,10 +475,10 @@ body:has(.login-page) {
 }
 
 .app-side-item:hover {
-	background-color: rgba(255, 255, 255, 0.18);
+	background-color: rgba(255, 255, 255, 0.15);
 	border-color: rgba(255, 255, 255, 0.72);
 	color: #ffffff;
-	transform: translateX(3px);
+	transform: translateX(4px);
 	box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2), var(--shadow-hover-glow);
 }
 

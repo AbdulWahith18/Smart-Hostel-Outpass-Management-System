@@ -1,0 +1,227 @@
+body {
+  background:
+    radial-gradient(circle at 10% 20%, rgba(20, 184, 166, .08), transparent 35%),
+    radial-gradient(circle at 90% 10%, rgba(99, 102, 241, .06), transparent 40%),
+    radial-gradient(circle at 40% 90%, rgba(20, 184, 166, .05), transparent 35%),
+    #f8fafc;
+}
+
+.saas-card,
+.login-card,
+.register-card,
+.student-home-card,
+.rc-home-card,
+.analytics-card,
+.admin-analytics-card,
+.rc-analytics-card {
+  background: rgba(255, 255, 255, .75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, .08),
+    0 2px 10px rgba(0, 0, 0, .05);
+  transition: all .25s ease;
+}
+
+.saas-card:hover,
+.login-card:hover,
+.register-card:hover,
+.student-home-card:hover,
+.rc-home-card:hover,
+.analytics-card:hover,
+.admin-analytics-card:hover,
+.rc-analytics-card:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, .12),
+    0 6px 16px rgba(0, 0, 0, .06);
+}
+
+.btn,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .8rem 1.4rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .25s ease;
+}
+
+.btn-primary,
+button {
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
+  color: white;
+  border: none;
+  box-shadow: 0 10px 24px rgba(20, 184, 166, .35);
+}
+
+.btn-primary:hover,
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(20, 184, 166, .45);
+}
+
+.btn-outline {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-button);
+}
+
+.btn-outline:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-button-hover);
+  filter: brightness(1.03);
+}
+
+.input,
+.input-premium,
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  width: 100%;
+  padding: .9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, .1);
+  background: white;
+  transition: all .2s ease;
+}
+
+.input:hover,
+.input-premium:hover,
+input:not([type='checkbox']):not([type='radio']):hover,
+select:hover,
+textarea:hover {
+  border-color: #14b8a6;
+}
+
+.input:focus,
+.input-premium:focus,
+input:not([type='checkbox']):not([type='radio']):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, .15);
+}
+
+.dashboard-card {
+  padding: 1.2rem;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid rgba(15, 23, 42, .08);
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  transition: .25s;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .08);
+}
+
+.saas-side-shell {
+  position: relative;
+  overflow: visible;
+  background: linear-gradient(160deg, #0f766e, #042f2e);
+  border-right: 1px solid rgba(255, 255, 255, .18);
+  box-shadow: 10px 0 40px rgba(0, 0, 0, .35);
+}
+
+.saas-side-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(94, 234, 212, .65), rgba(165, 180, 252, .55));
+  box-shadow: 0 0 16px rgba(94, 234, 212, .4);
+  pointer-events: none;
+}
+
+.saas-side-toggle {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(135deg, #0b7a74 0%, #005e59 100%) padding-box,
+    linear-gradient(180deg, rgba(94, 234, 212, .65), rgba(165, 180, 252, .55)) border-box;
+}
+
+.saas-side-toggle:hover {
+  background:
+    linear-gradient(135deg, #0f746f, #005e59) padding-box,
+    linear-gradient(180deg, rgba(94, 234, 212, .8), rgba(165, 180, 252, .7)) border-box;
+}
+
+.app-side-item {
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .24);
+  color: #e8f6f0;
+  border-radius: 12px;
+  padding: .7rem .9rem;
+  transition: .25s;
+}
+
+.app-side-item:hover {
+  background: rgba(255, 255, 255, .15);
+  border-color: rgba(255, 255, 255, .62);
+  transform: translateX(4px) translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, .24);
+}
+
+.app-side-item-active {
+  background: rgba(255, 255, 255, .24);
+  border-color: rgba(255, 255, 255, .92);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(206, 242, 239, .32), 0 14px 24px rgba(0, 0, 0, .28);
+}
+
+.fade-in {
+  animation: fadeIn .5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hover-lift {
+  transition: .25s;
+}
+
+.hover-lift:hover,
+.saas-card:hover,
+.btn:hover,
+.dashboard-card:hover,
+.app-side-item:hover {
+  transform: translateY(-4px);
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 2rem;
+}

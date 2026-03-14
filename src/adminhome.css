@@ -267,24 +267,25 @@
 }
 
 .admin-user-type-btn-active {
-  border-color: rgba(0, 94, 89, 0.28);
-  background: #ffffff;
-  color: #0b7a74;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  border-color: transparent;
+  background: var(--gradient-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-button);
 }
 
 .admin-refresh-button {
   padding: 0.5rem 0.85rem;
   border-radius: 10px;
-  border: 1px solid rgba(0, 94, 89, 0.24);
-  background: #ffffff;
-  color: #0b7a74;
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+  border: 1px solid transparent;
+  background: var(--gradient-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-button);
 }
 
 .admin-refresh-button:hover {
-  background: #eef8f7;
-  color: #005e59;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-button-hover);
+  filter: brightness(1.03);
 }
 
 .admin-analytics-refresh-button {

@@ -7,6 +7,34 @@ const ANALYTICS_MODEL_CANDIDATES = [
   'gemini-2.5-flash',
 ]
 
+const normalizeMessage = (message = '') =>
+  message
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+
+export const getSimpleAdminChatResponse = (message = '') => {
+  const normalized = normalizeMessage(message)
+  if (!normalized) {
+    return null
+  }
+
+  const greetingPattern = /^(hi|hello|hey|gm|good morning|good afternoon|good evening)$/
+  const thanksPattern = /^(thanks|thank you|thankyou|thx)$/
+
+  if (greetingPattern.test(normalized)) {
+    return 'Hello! I can help with analytics questions like total users, approval trends, weekday counts, and date-wise requests.'
+  }
+
+  if (thanksPattern.test(normalized)) {
+    return 'You are welcome. Ask me any analytics question when you are ready.'
+  }
+
+  return null
+}
+
 const generateWithFallback = async (prompt) => {
   const geminiApiKey = process.env.GEMINI_API_KEY?.trim()
   if (!geminiApiKey) {

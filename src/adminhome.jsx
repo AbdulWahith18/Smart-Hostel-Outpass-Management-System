@@ -350,7 +350,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
         <section className="admin-summary-grid" aria-label="User summary">
           <article
-            className={`admin-summary-card admin-summary-card-clickable ${
+            className={`admin-summary-card dashboard-card hover-lift admin-summary-card-clickable ${
               activeView === 'view' ? 'admin-summary-card-active' : ''
             }`}
             role="button"
@@ -378,7 +378,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
           </article>
 
           <article
-            className={`admin-summary-card admin-summary-card-clickable ${
+            className={`admin-summary-card dashboard-card hover-lift admin-summary-card-clickable ${
               activeView === 'view' && viewUserType === 'Student' ? 'admin-summary-card-active' : ''
             }`}
             role="button"
@@ -406,7 +406,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
           </article>
 
           <article
-            className={`admin-summary-card admin-summary-card-clickable ${
+            className={`admin-summary-card dashboard-card hover-lift admin-summary-card-clickable ${
               activeView === 'view' && viewUserType === 'RC' ? 'admin-summary-card-active' : ''
             }`}
             role="button"
@@ -437,10 +437,10 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
         {isAnalyticsView && (
           <section className="admin-analytics-wrap" aria-label="AI analytics summary">
             <p className="admin-analytics-kicker">AI Powered Insights</p>
-            <div className="admin-analytics-card">
+            <div className="admin-analytics-card saas-card hover-lift analytics-card">
               <div className="admin-analytics-header-row">
                 <h3 className="admin-analytics-title">AI Analytics Summary</h3>
-                <button type="button" className="admin-analytics-refresh-button" onClick={fetchAiInsights}>
+                <button type="button" className="admin-analytics-refresh-button btn btn-primary hover-lift" onClick={fetchAiInsights}>
                   Refresh Insights
                 </button>
               </div>
@@ -472,10 +472,10 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                   <p className="admin-chatbot-subtitle">Ask direct questions about users and outpass trends.</p>
                 </div>
                 <div className="admin-chatbot-top-actions">
-                  <button type="button" className="admin-chatbot-export" onClick={exportChat}>
+                  <button type="button" className="admin-chatbot-export btn btn-outline hover-lift" onClick={exportChat}>
                     Export Chat
                   </button>
-                  <button type="button" className="admin-chatbot-clear" onClick={clearChat}>
+                  <button type="button" className="admin-chatbot-clear btn btn-outline hover-lift" onClick={clearChat}>
                     Clear Chat
                   </button>
                 </div>
@@ -486,7 +486,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                   <button
                     key={hint}
                     type="button"
-                    className="admin-chatbot-hint"
+                    className="admin-chatbot-hint btn btn-outline hover-lift"
                     onClick={() => sendChatQuestion(hint)}
                     disabled={isChatLoading}
                   >
@@ -522,12 +522,12 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
               >
                 <input
                   type="text"
-                  className="admin-chatbot-input"
+                  className="admin-chatbot-input input"
                   value={chatQuestion}
                   onChange={(event) => setChatQuestion(event.target.value)}
                   placeholder="Ask: how many users, which day has most requests, count on a date..."
                 />
-                <button type="submit" className="admin-chatbot-send" disabled={isChatLoading || !chatQuestion.trim()}>
+                <button type="submit" className="admin-chatbot-send btn btn-primary hover-lift" disabled={isChatLoading || !chatQuestion.trim()}>
                   Ask AI
                 </button>
               </form>
@@ -560,7 +560,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
               <span className={`admin-users-mode-pill ${activeView === 'manage' ? 'admin-users-mode-pill-manage' : ''}`}>
                 {activeView === 'manage' ? 'Status Controls' : 'Read Only'}
               </span>
-            <button type="button" className="admin-refresh-button" onClick={fetchUsers}>
+            <button type="button" className="admin-refresh-button btn btn-outline hover-lift" onClick={fetchUsers}>
               Refresh
             </button>
             </div>
@@ -575,7 +575,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'All'}
-                    className={`admin-user-type-btn ${viewUserType === 'All' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'All' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('All')}
                   >
                     All
@@ -584,7 +584,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'Student'}
-                    className={`admin-user-type-btn ${viewUserType === 'Student' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'Student' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('Student')}
                   >
                     Students
@@ -593,7 +593,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'RC'}
-                    className={`admin-user-type-btn ${viewUserType === 'RC' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'RC' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('RC')}
                   >
                     RC Users
@@ -608,7 +608,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'all'}
-                    className={`admin-user-type-btn ${statusFilter === 'all' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'all' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('all')}
                   >
                     All
@@ -617,7 +617,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'active'}
-                    className={`admin-user-type-btn ${statusFilter === 'active' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'active' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('active')}
                   >
                     Active
@@ -626,7 +626,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'inactive'}
-                    className={`admin-user-type-btn ${statusFilter === 'inactive' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'inactive' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('inactive')}
                   >
                     Inactive
@@ -637,7 +637,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
               <div className="admin-search-wrap">
                 <input
                   type="text"
-                  className="admin-search-input"
+                  className="admin-search-input input"
                   placeholder="Search by username, email, mobile or type"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -656,7 +656,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'All'}
-                    className={`admin-user-type-btn ${viewUserType === 'All' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'All' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('All')}
                   >
                     All
@@ -665,7 +665,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'Student'}
-                    className={`admin-user-type-btn ${viewUserType === 'Student' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'Student' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('Student')}
                   >
                     Students
@@ -674,7 +674,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={viewUserType === 'RC'}
-                    className={`admin-user-type-btn ${viewUserType === 'RC' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${viewUserType === 'RC' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setViewUserType('RC')}
                   >
                     RC Users
@@ -689,7 +689,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'all'}
-                    className={`admin-user-type-btn ${statusFilter === 'all' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'all' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('all')}
                   >
                     All
@@ -698,7 +698,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'active'}
-                    className={`admin-user-type-btn ${statusFilter === 'active' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'active' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('active')}
                   >
                     Active
@@ -707,7 +707,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                     type="button"
                     role="tab"
                     aria-selected={statusFilter === 'inactive'}
-                    className={`admin-user-type-btn ${statusFilter === 'inactive' ? 'admin-user-type-btn-active' : ''}`}
+                    className={`admin-user-type-btn btn btn-outline hover-lift ${statusFilter === 'inactive' ? 'admin-user-type-btn-active' : ''}`}
                     onClick={() => setStatusFilter('inactive')}
                   >
                     Inactive
@@ -718,7 +718,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
               <div className="admin-search-wrap admin-search-wrap-manage">
                 <input
                   type="text"
-                  className="admin-search-input"
+                  className="admin-search-input input"
                   placeholder="Search users by username, email, mobile or type"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
@@ -790,7 +790,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                           {user.status === 'active' ? (
                             <button
                               type="button"
-                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+                              className="btn btn-outline hover-lift bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
                               onClick={() => handleUpdateUserStatus(user._id, 'inactive')}
                             >
                               Deactivate
@@ -798,7 +798,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                           ) : (
                             <button
                               type="button"
-                              className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm"
+                              className="btn btn-outline hover-lift bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm"
                               onClick={() => handleUpdateUserStatus(user._id, 'active')}
                             >
                               Activate

@@ -173,7 +173,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
   return (
     <main className="rc-home-page">
-      <section className="rc-home-card" aria-labelledby="rc-home-title">
+      <section className="rc-home-card saas-card fade-in" aria-labelledby="rc-home-title">
         <header className="rc-home-header">
           <h1 id="rc-home-title">RC Dashboard</h1>
           <p className="rc-subtitle">Logged in as: {currentRc?.username ?? 'RC'}</p>
@@ -181,7 +181,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
         <section className="rc-summary-grid" aria-label="RC request summary">
           <article
-            className={`rc-summary-card rc-summary-card-clickable ${
+            className={`rc-summary-card dashboard-card hover-lift rc-summary-card-clickable ${
               activeView === 'pending' ? 'rc-summary-card-active' : ''
             }`}
             role="button"
@@ -200,7 +200,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
           </article>
 
           <article
-            className={`rc-summary-card rc-summary-card-clickable ${
+            className={`rc-summary-card dashboard-card hover-lift rc-summary-card-clickable ${
               activeView === 'approved' ? 'rc-summary-card-active' : ''
             }`}
             role="button"
@@ -218,7 +218,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
             </div>
           </article>
 
-          <article className="rc-summary-card">
+          <article className="rc-summary-card dashboard-card hover-lift">
             <span className="rc-summary-icon" aria-hidden="true">
               📄
             </span>
@@ -232,10 +232,10 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
         {isAnalyticsView && (
           <section className="rc-analytics-wrap" aria-label="RC AI analytics snapshot">
             <p className="rc-analytics-kicker">AI Powered Insights (Admin Generated)</p>
-            <div className="rc-analytics-card">
+            <div className="rc-analytics-card saas-card hover-lift analytics-card">
               <div className="rc-analytics-header-row">
                 <h3 className="rc-analytics-title">AI Analytics Snapshot</h3>
-                <button type="button" className="rc-approve-button" onClick={fetchAiSnapshot}>
+                <button type="button" className="rc-approve-button btn btn-primary hover-lift" onClick={fetchAiSnapshot}>
                   Refresh Snapshot
                 </button>
               </div>
@@ -389,7 +389,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
                   </section>
 
                   {request.status === 'pending' && (
-                    <button className="rc-approve-button" type="button" onClick={() => handleApprove(request._id)}>
+                    <button className="rc-approve-button btn btn-primary hover-lift" type="button" onClick={() => handleApprove(request._id)}>
                       Approve Pass
                     </button>
                   )}

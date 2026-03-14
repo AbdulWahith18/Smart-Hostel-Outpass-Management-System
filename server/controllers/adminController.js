@@ -1,7 +1,11 @@
 import User from '../models/User.js'
 import PassRequest from '../models/PassRequest.js'
 import AnalyticsSnapshot from '../models/AnalyticsSnapshot.js'
-import { answerAdminAnalyticsQuestion, generateAnalyticsSummary } from '../services/analyticsService.js'
+import {
+  answerAdminAnalyticsQuestion,
+  generateAnalyticsSummary,
+  getSimpleAdminChatResponse,
+} from '../services/analyticsService.js'
 
 const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const INACTIVITY_DAYS = 60
@@ -227,6 +231,17 @@ export const askAiAnalyticsQuestion = async (req, res) => {
 
     if (!question) {
       return res.status(400).json({ message: 'Question is required.' })
+    }
+
+    const simpleResponse = getSimpleAdminChatResponse(question)
+    if (simpleResponse) {
+      return res.status(200).json({
+        answer: simpleResponse,
+        contextMeta: {
+          generatedAt: new Date().toISOString(),
+          mode: 'simple-response',
+        },
+      })
     }
 
     const { analyticsData, dayCounts, dateCounts, topApplicants } = await buildDashboardAnalyticsData()

@@ -295,14 +295,14 @@ function App() {
       <div className="bg-slate-50 pt-16">
         <div className="flex min-h-[calc(100vh-64px)]">
           <aside
-            className={`relative sticky top-16 h-[calc(100vh-64px)] shrink-0 border-r border-teal-200/40 bg-gradient-to-b from-teal-700 to-teal-800 text-teal-50 shadow-lg transition-all duration-300 ease-in-out ${
+            className={`saas-side-shell relative sticky top-16 h-[calc(100vh-64px)] shrink-0 border-r border-teal-200/40 bg-gradient-to-b from-teal-700 to-teal-800 text-teal-50 shadow-lg transition-all duration-300 ease-in-out ${
               isSidebarOpen ? 'w-64' : 'w-16'
             }`}
             aria-label={sidebarAriaLabel}
           >
             <button
               type="button"
-              className="absolute top-8 -right-4 z-30 rounded-full border border-teal-200 bg-white p-1.5 text-teal-700 shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:bg-teal-50 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+              className="saas-side-toggle absolute top-8 -right-4 z-30 rounded-full p-1.5 text-[#d8eeec] shadow-md transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
               aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
               aria-expanded={isSidebarOpen}
               onClick={() => setIsSidebarOpen((previousState) => !previousState)}
@@ -317,9 +317,9 @@ function App() {
                   <button
                     key={item.key}
                     type="button"
-                    className={`group relative flex w-full items-center gap-3 rounded-xl py-3 text-sm font-semibold transition-all duration-300 ease-in-out ${
+                    className={`app-side-item group relative flex w-full items-center gap-3 rounded-xl py-3 text-sm font-semibold transition-all duration-300 ease-in-out ${
                       isActive
-                        ? 'border-l-4 border-white bg-white/20 text-white shadow-[0_10px_20px_rgba(2,132,199,0.2)]'
+                        ? 'app-side-item-active border-l-4 border-white'
                         : 'border-l-4 border-transparent bg-white/10 text-teal-100 backdrop-blur-md hover:bg-white/20 hover:text-white'
                     } ${isSidebarOpen ? 'justify-start px-4 hover:translate-x-0.5' : 'justify-center px-0'}`}
                     onClick={() => onViewChange(item.key)}
@@ -416,13 +416,14 @@ function App() {
     <>
       <TopBar />
       <main className="login-page">
-        <section className="login-card" aria-labelledby="login-title">
+        <section className="login-card saas-card fade-in" aria-labelledby="login-title">
           <h1 id="login-title">Login</h1>
           <p className="login-subtitle">Sign in to continue to your application</p>
 
           <form className="login-form" onSubmit={handleSubmit}>
             <label htmlFor="userType">User Type</label>
             <select
+              className="input"
               id="userType"
               name="userType"
               value={userType}
@@ -439,6 +440,7 @@ function App() {
 
             <label htmlFor="email">Email</label>
             <input
+              className="input"
               id="email"
               name="email"
               type="email"
@@ -450,6 +452,7 @@ function App() {
 
             <label htmlFor="password">Password</label>
             <input
+              className="input"
               id="password"
               name="password"
               type="password"
@@ -496,7 +499,7 @@ function App() {
               </a>
             </p>
 
-            <button type="submit">Sign in</button>
+            <button type="submit" className="btn btn-primary hover-lift">Sign in</button>
             <p className="register-text">
               Don&apos;t have an account?{' '}
               <a href="#" onClick={handleOpenRegister}>
@@ -519,12 +522,13 @@ function App() {
             clearResetForm()
           }}
         >
-          <section className="forgot-card" onClick={(event) => event.stopPropagation()}>
+          <section className="forgot-card saas-card fade-in" onClick={(event) => event.stopPropagation()}>
             <h2>Reset Password</h2>
             <form className="forgot-form" onSubmit={handleResetPassword}>
               <label htmlFor="resetIdentifier">Username or Email</label>
               <div className="forgot-inline-group">
                 <input
+                  className="input"
                   id="resetIdentifier"
                   name="resetIdentifier"
                   type="text"
@@ -538,7 +542,7 @@ function App() {
                 />
                 <button
                   type="button"
-                  className="forgot-secondary"
+                  className="forgot-secondary btn btn-outline hover-lift"
                   onClick={handleSendOtp}
                   disabled={isSendingOtp || isVerifyingOtp || isResettingPassword}
                 >
@@ -549,6 +553,7 @@ function App() {
               <label htmlFor="resetOtp">OTP</label>
               <div className="forgot-inline-group">
                 <input
+                  className="input"
                   id="resetOtp"
                   name="resetOtp"
                   type="text"
@@ -566,7 +571,7 @@ function App() {
                 />
                 <button
                   type="button"
-                  className="forgot-secondary"
+                  className="forgot-secondary btn btn-outline hover-lift"
                   onClick={handleVerifyOtp}
                   disabled={isSendingOtp || isVerifyingOtp || isResettingPassword}
                 >
@@ -579,6 +584,7 @@ function App() {
 
               <label htmlFor="resetNewPassword">New Password</label>
               <input
+                className="input"
                 id="resetNewPassword"
                 name="resetNewPassword"
                 type="password"
@@ -592,6 +598,7 @@ function App() {
 
               <label htmlFor="resetConfirmPassword">Confirm New Password</label>
               <input
+                className="input"
                 id="resetConfirmPassword"
                 name="resetConfirmPassword"
                 type="password"
@@ -604,12 +611,12 @@ function App() {
               />
 
               <div className="forgot-card-actions">
-                <button type="submit" className="forgot-submit" disabled={isResettingPassword}>
+                <button type="submit" className="forgot-submit btn btn-primary hover-lift" disabled={isResettingPassword}>
                   {isResettingPassword ? 'Updating...' : 'Update Password'}
                 </button>
                 <button
                   type="button"
-                  className="forgot-cancel"
+                  className="forgot-cancel btn btn-outline hover-lift"
                   onClick={() => {
                     setShowForgotCard(false)
                     clearResetForm()

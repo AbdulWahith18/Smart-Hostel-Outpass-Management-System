@@ -1,54 +1,93 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+@import "./styles/saas-ui.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: #1f2937;
-  background-color: #f4f6f9;
 
+  /* ===== SaaS Color System ===== */
+
+  --primary: #14b8a6;
+  --primary-dark: #0f766e;
+  --primary-soft: #5eead4;
+
+  --accent: #6366f1;
+  --accent-soft: #a5b4fc;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* ===== Backgrounds ===== */
+
+  --page-bg: #f8fafc;
   --surface-bg: #ffffff;
-  --page-bg: #f4f6f9;
-  --text-primary: #0f4f4b;
-  --text-secondary: #4f5f66;
-  --field-text: #243036;
-  --field-border: rgba(48, 66, 72, 0.25);
-  --focus-color: #005e59;
-  --focus-glow: 0 0 0 4px rgba(0, 94, 89, 0.22);
-  --card-border: 1px solid rgba(0, 94, 89, 0.16);
-  --card-radius: 12px;
-  --input-radius: 8px;
-  --button-radius: 10px;
-  --shadow-soft: 0 14px 28px rgba(15, 23, 42, 0.08);
-  --shadow-card: 0 8px 16px rgba(15, 23, 42, 0.06);
-  --shadow-button: 0 10px 18px rgba(0, 94, 89, 0.28);
-  --shadow-button-hover: 0 14px 24px rgba(0, 94, 89, 0.36), 0 0 0 1px rgba(121, 184, 180, 0.4), 0 0 18px rgba(61, 143, 139, 0.34);
-  --shadow-hover-glow: 0 0 0 1px rgba(121, 184, 180, 0.45), 0 0 18px rgba(61, 143, 139, 0.36);
-  --gradient-primary: linear-gradient(135deg, #0b7a74 0%, #005e59 100%);
-  --gradient-sidebar: linear-gradient(135deg, #0b7a74 0%, #005e59 100%);
-  --active-glow: 0 0 0 1px rgba(182, 230, 226, 0.5), 0 0 18px rgba(61, 143, 139, 0.34);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-blur: blur(10px);
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-*, *::before, *::after {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+  --glass-bg: rgba(255,255,255,0.65);
+  --glass-blur: blur(18px);
 
-*::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
+  /* ===== Text ===== */
 
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  /* ===== Borders ===== */
+
+  --border-soft: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+
+  /* ===== Radius ===== */
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --card-radius: var(--radius-lg);
+  --input-radius: var(--radius-md);
+  --button-radius: var(--radius-md);
+
+  /* ===== Shadows ===== */
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+
+  --shadow-md:
+    0 6px 16px rgba(0,0,0,0.08),
+    0 2px 6px rgba(0,0,0,0.04);
+
+  --shadow-lg:
+    0 20px 40px rgba(0,0,0,0.10),
+    0 6px 16px rgba(0,0,0,0.05);
+
+  --shadow-glow:
+    0 0 0 1px rgba(94,234,212,0.4),
+    0 0 18px rgba(20,184,166,0.35);
+
+  /* ===== Buttons ===== */
+
+  --gradient-primary:
+    linear-gradient(135deg,#14b8a6 0%,#0f766e 100%);
+
+  --gradient-sidebar:
+    linear-gradient(160deg,#0f766e 0%,#042f2e 100%);
+
+  --shadow-button:
+    0 10px 22px rgba(20,184,166,0.35);
+
+  --shadow-button-hover:
+    0 16px 32px rgba(20,184,166,0.45);
+
+  /* ===== Focus ===== */
+
+  --focus-color: #14b8a6;
+
+  --focus-glow:
+    0 0 0 4px rgba(20,184,166,0.2);
+
+}
 a {
   font-weight: 500;
   color: #0b7a74;
@@ -60,8 +99,8 @@ a:hover {
 
 body {
   margin: 0;
-  background-color: var(--page-bg);
   color: #1f2937;
+  font-family: 'Inter', 'Poppins', system-ui;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -87,27 +126,13 @@ h6 {
   color: rgb(15, 94, 89);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #e2e8f0;
-  color: #1f2937;
-  cursor: pointer;
-  box-shadow: 0 6px 14px rgba(31, 41, 55, 0.14);
-  transition: border-color 0.25s, background-color 0.25s, color 0.25s, box-shadow 0.25s,
-    transform 0.25s;
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+  font-weight: 700;
 }
-button:hover {
-  border-color: #005e59;
-  background-color: #005e59;
-  color: #f8fbff;
-  box-shadow: 0 10px 22px rgba(0, 94, 89, 0.35), var(--shadow-hover-glow);
-  transform: translateY(-1px);
-}
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
@@ -115,5 +140,23 @@ button:focus-visible {
 
 a:hover {
   color: #0b7a74;
+}
+
+/* Force-hide scrollbars globally while keeping scroll behavior intact. */
+html,
+body,
+#root,
+* {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#root::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
