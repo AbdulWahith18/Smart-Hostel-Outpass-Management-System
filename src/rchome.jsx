@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import './rchome.css'
+import { getAuthToken } from './utils/authToken'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -23,12 +24,12 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
   const [aiErrorMessage, setAiErrorMessage] = useState('')
   const isAnalyticsView = activeView === 'analytics'
 
-  const fetchAiSnapshot = async () => {
+  const fetchAiSummary = async () => {
     setIsAiLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken')
-      const response = await fetch('/api/admin/ai-analytics/snapshot', {
+      const token = getAuthToken()
+      const response = await fetch('/api/admin/ai-analytics/rc', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -37,7 +38,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        setAiErrorMessage(data.message ?? 'AI insights are not available right now.')
+        setAiErrorMessage(data.message ?? 'AI summary is not available right now.')
         setAiInsights([])
         setAiGeneratedAt('')
         return
@@ -125,7 +126,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       return
     }
 
-    fetchAiSnapshot()
+    fetchAiSummary()
   }, [activeView])
 
   const pendingRequests = requestsForRc.filter((request) => request.status === 'pending')
@@ -231,12 +232,12 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
         {isAnalyticsView && (
           <section className="rc-analytics-wrap" aria-label="RC AI analytics snapshot">
-            <p className="rc-analytics-kicker">AI Powered Insights (Admin Generated)</p>
+            <p className="rc-analytics-kicker">AI Powered Insights</p>
             <div className="rc-analytics-card saas-card hover-lift analytics-card">
               <div className="rc-analytics-header-row">
-                <h3 className="rc-analytics-title">AI Analytics Snapshot</h3>
-                <button type="button" className="rc-approve-button btn btn-primary hover-lift" onClick={fetchAiSnapshot}>
-                  Refresh Snapshot
+                <h3 className="rc-analytics-title">AI Analytics Summary</h3>
+                <button type="button" className="rc-approve-button btn btn-primary hover-lift" onClick={fetchAiSummary}>
+                  Refresh Summary
                 </button>
               </div>
 

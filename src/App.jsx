@@ -7,6 +7,7 @@ import RCHome from './rchome'
 import AdminHome from './adminhome'
 import MainPage from './mainpage'
 import TopBar from './topbar'
+import { clearAuthToken, setAuthToken } from './utils/authToken'
 
 function App() {
   const rememberedLoginKey = 'rememberedLogin'
@@ -103,7 +104,7 @@ function App() {
         localStorage.removeItem(rememberedLoginKey)
       }
 
-      localStorage.setItem('authToken', data.token)
+      setAuthToken(data.token)
       setCurrentUser(data.user)
 
       if (data.user.userType === 'Student') {
@@ -147,7 +148,7 @@ function App() {
   }
 
   const handleBackToLogin = () => {
-    localStorage.removeItem('authToken')
+    clearAuthToken()
     setCurrentUser(null)
     setStudentActiveView('apply')
     setRcActiveView('pending')

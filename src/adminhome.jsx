@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './adminhome.css'
+import { getAuthToken } from './utils/authToken'
 
 const INACTIVITY_DAYS = 60
 
@@ -76,7 +77,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     setIsLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken')
+      const token = getAuthToken()
       const response = await fetch('/api/admin/users', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -105,7 +106,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     setIsAiLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken')
+      const token = getAuthToken()
       const response = await fetch('/api/admin/ai-analytics', {
         method: 'POST',
         headers: {
@@ -214,7 +215,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
   const handleUpdateUserStatus = async (userId, nextStatus) => {
     try {
-      const token = localStorage.getItem('authToken')
+      const token = getAuthToken()
       const response = await fetch(`/api/admin/user-status/${userId}`, {
         method: 'PATCH',
         headers: {
@@ -253,7 +254,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     setIsChatLoading(true)
 
     try {
-      const token = localStorage.getItem('authToken')
+      const token = getAuthToken()
       const response = await fetch('/api/admin/ai-chat', {
         method: 'POST',
         headers: {

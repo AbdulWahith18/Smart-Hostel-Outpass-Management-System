@@ -85,7 +85,6 @@ export default function MainPage({ onLogin, onRegister }) {
             </div>
             <nav className="mp-topbar-nav">
               <a className="mp-nav-link" href="#features">Features</a>
-              <a className="mp-nav-link" href="#about">About</a>
             </nav>
             <div className="mp-topbar-actions">
               <button className="mp-topbar-register" onClick={onRegister}>Register</button>
