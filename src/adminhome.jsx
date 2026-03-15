@@ -177,8 +177,9 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
   const studentCount = useMemo(() => users.filter((user) => user.userType === 'Student').length, [users])
   const rcCount = useMemo(() => users.filter((user) => user.userType === 'RC').length, [users])
   const visibleUsers = useMemo(() => {
+
     const usersByType =
-      activeView === 'manage' || viewUserType === 'All'
+      viewUserType === 'All'
         ? users
         : users.filter((user) => user.userType === viewUserType)
 
