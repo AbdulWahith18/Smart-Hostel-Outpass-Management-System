@@ -1,4 +1,31 @@
-﻿.student-home-page {
+﻿.summary-icon-rejected {
+	background: rgba(220, 38, 38, 0.14);
+	color: #dc2626 !important;
+}
+.student-summary-card-rejected {
+	border-left: 4px solid #dc2626 !important;
+}
+
+.pass-status-rejected .pass-status-icon {
+	color: #dc2626 !important;
+}
+
+.summary-icon-rejected {
+	background: rgba(220, 38, 38, 0.14);
+}
+
+.applied-pass-item-rejected {
+	border-left: 4px solid #dc2626 !important;
+	background: rgba(220, 38, 38, 0.07);
+	box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.13), 0 4px 10px rgba(220, 38, 38, 0.13);
+}
+
+.pass-status-rejected {
+	background: rgba(220, 38, 38, 0.18);
+	color: #b91c1c;
+	box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.18), 0 4px 10px rgba(220, 38, 38, 0.22);
+}
+.student-home-page {
 	width: 100%;
 	max-width: 1100px;
 	margin: 0 auto;

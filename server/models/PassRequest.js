@@ -85,10 +85,20 @@ const passRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'approved'],
+      enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
     approvedAt: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    rejectedBy: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    rejectedAt: {
       type: String,
       default: '',
       trim: true,

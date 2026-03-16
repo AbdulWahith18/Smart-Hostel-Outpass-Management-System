@@ -1,3 +1,43 @@
+export const rejectPassRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params
+    const { rcUsername = '' } = req.body
+
+    if (!rcUsername.trim()) {
+      return res.status(400).json({ message: 'RC username is required to reject.' })
+    }
+
+    const passRequest = await PassRequest.findById(requestId)
+
+    if (!passRequest) {
+      return res.status(404).json({ message: 'Pass request not found.' })
+    }
+
+    if (passRequest.authorizedRc !== rcUsername.trim()) {
+      return res.status(403).json({ message: 'You can only reject students mapped to your RC account.' })
+    }
+
+    if (passRequest.status === 'rejected') {
+      return res.status(200).json({ message: 'Pass request is already rejected.', passRequest })
+    }
+
+    passRequest.status = 'rejected'
+    passRequest.approvedAt = ''
+    passRequest.rejectedBy = rcUsername.trim()
+    passRequest.rejectedAt = new Date().toISOString()
+    await passRequest.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`rc:${passRequest.authorizedRc}`).emit('pass:updated', passRequest)
+      io.to(`student:${passRequest.studentEmail}`).emit('pass:updated', passRequest)
+    }
+
+    return res.status(200).json({ message: 'Pass rejected successfully.', passRequest })
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to reject pass request.', error: error.message })
+  }
+}
 import PassRequest from '../models/PassRequest.js'
 
 export const createPassRequest = async (req, res) => {

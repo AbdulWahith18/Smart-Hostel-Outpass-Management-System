@@ -118,7 +118,10 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
   const pendingPasses = appliedPasses.filter((passRequest) => passRequest.status === 'pending')
   const approvedPasses = appliedPasses.filter((passRequest) => passRequest.status === 'approved')
-  const visiblePasses = activeView === 'approved' ? approvedPasses : pendingPasses
+  const rejectedPasses = appliedPasses.filter((passRequest) => passRequest.status === 'rejected')
+  let visiblePasses = pendingPasses
+  if (activeView === 'approved') visiblePasses = approvedPasses
+  else if (activeView === 'rejected') visiblePasses = rejectedPasses
   const totalPasses = appliedPasses.length
   const appliedDate = appliedDateTime.slice(0, 10)
   const appliedTime = appliedDateTime.slice(11, 16)
@@ -250,9 +253,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
             onKeyDown={(event) => handleSummaryKeyDown(event, 'pending')}
             aria-label="Open pending passes"
           >
-            <span className="summary-icon summary-icon-pending" aria-hidden="true">
-              ⏳
-            </span>
+            <span className="summary-icon summary-icon-pending" aria-hidden="true">⏳</span>
             <div>
               <p className="summary-label">Pending</p>
               <p className="summary-value">{pendingPasses.length}</p>
@@ -269,19 +270,32 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
             onKeyDown={(event) => handleSummaryKeyDown(event, 'approved')}
             aria-label="Open approved passes"
           >
-            <span className="summary-icon summary-icon-approved" aria-hidden="true">
-              ✅
-            </span>
+            <span className="summary-icon summary-icon-approved" aria-hidden="true">✅</span>
             <div>
               <p className="summary-label">Approved</p>
               <p className="summary-value">{approvedPasses.length}</p>
             </div>
           </article>
 
+          <article
+            className={`student-summary-card dashboard-card hover-lift student-summary-card-rejected student-summary-card-clickable ${
+              activeView === 'rejected' ? 'student-summary-card-active' : ''
+            }`}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleSummaryNavigate('rejected')}
+            onKeyDown={(event) => handleSummaryKeyDown(event, 'rejected')}
+            aria-label="Open rejected passes"
+          >
+            <span className="summary-icon summary-icon-rejected" aria-hidden="true">✖</span>
+            <div>
+              <p className="summary-label">Rejected</p>
+              <p className="summary-value">{rejectedPasses.length}</p>
+            </div>
+          </article>
+
           <article className="student-summary-card dashboard-card hover-lift student-summary-card-total">
-            <span className="summary-icon summary-icon-total" aria-hidden="true">
-              📄
-            </span>
+            <span className="summary-icon summary-icon-total" aria-hidden="true">📄</span>
             <div>
               <p className="summary-label">Total Applications</p>
               <p className="summary-value">{totalPasses}</p>
@@ -456,11 +470,21 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
               </>
             ) : (
               <>
-                <h2>{activeView === 'approved' ? 'Approved Passes' : 'Pending Passes'}</h2>
+                <h2>
+                  {activeView === 'approved'
+                    ? 'Approved Passes'
+                    : activeView === 'rejected'
+                    ? 'Rejected Passes'
+                    : 'Pending Passes'}
+                </h2>
                 {passFetchError && <p className="fetch-error-text">{passFetchError}</p>}
                 {visiblePasses.length === 0 ? (
                   <p className="empty-text">
-                    {activeView === 'approved' ? 'No approved passes yet.' : 'No pending passes yet.'}
+                    {activeView === 'approved'
+                      ? 'No approved passes yet.'
+                      : activeView === 'rejected'
+                      ? 'No rejected passes yet.'
+                      : 'No pending passes yet.'}
                   </p>
                 ) : (
                   <ul className="applied-pass-list">
@@ -468,7 +492,11 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                       <li
                         key={passRequest._id}
                         className={`applied-pass-item ${
-                          passRequest.status === 'approved' ? 'applied-pass-item-approved' : 'applied-pass-item-pending'
+                          passRequest.status === 'approved'
+                            ? 'applied-pass-item-approved'
+                            : passRequest.status === 'rejected'
+                            ? 'applied-pass-item-rejected'
+                            : 'applied-pass-item-pending'
                         }`}
                       >
                         <div className="pass-card-header">
@@ -494,15 +522,24 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                             <span className="pass-detail-label">Status</span>
                             <span
                               className={`pass-status ${
-                                passRequest.status === 'approved' ? 'pass-status-approved' : 'pass-status-pending'
+                                passRequest.status === 'approved'
+                                  ? 'pass-status-approved'
+                                  : passRequest.status === 'rejected'
+                                  ? 'pass-status-rejected'
+                                  : 'pass-status-pending'
                               }`}
                             >
                               {passRequest.status === 'approved' && (
-                                <span className="pass-status-icon" aria-hidden="true">
-                                  ✔
-                                </span>
+                                <span className="pass-status-icon" aria-hidden="true">✔</span>
                               )}
-                              {passRequest.status === 'approved' ? 'Approved' : 'Pending'}
+                              {passRequest.status === 'rejected' && (
+                                <span className="pass-status-icon" aria-hidden="true">✖</span>
+                              )}
+                              {passRequest.status === 'approved'
+                                ? 'Approved'
+                                : passRequest.status === 'rejected'
+                                ? 'Rejected'
+                                : 'Pending'}
                             </span>
                           </div>
 

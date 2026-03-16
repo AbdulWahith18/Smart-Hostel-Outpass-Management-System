@@ -1,6 +1,7 @@
 import express from 'express'
 import {
   approvePassRequest,
+  rejectPassRequest,
   createPassRequest,
   getPassRequestsForRc,
   getPassRequestsForStudent,
@@ -13,5 +14,6 @@ router.get('/rc/:rcUsername', getPassRequestsForRc)
 router.get('/student', getPassRequestsForStudent)
 router.get('/student/:studentEmail', getPassRequestsForStudent)
 router.patch('/:requestId/approve', approvePassRequest)
+router.patch('/:requestId/reject', rejectPassRequest)
 
 export default router

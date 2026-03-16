@@ -363,6 +363,7 @@ function App() {
       { key: 'apply', label: 'Apply Pass', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
     ]
 
     return renderDashboardLayout({
@@ -379,6 +380,7 @@ function App() {
     const rcMenuItems = [
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 
