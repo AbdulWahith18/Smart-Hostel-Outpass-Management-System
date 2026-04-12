@@ -17,7 +17,7 @@ const STATS = [
 // Splash: fade in (1.9s) → hold (1.2s) → fade out (1.9s) = 5s total
 const PHASE_DURATIONS = [5000]
 
-export default function MainPage({ onLogin, onRegister }) {
+export default function MainPage({ onLogin, onRegister, onNavigate }) {
   const [phase, setPhase] = useState(0)
   const [mainVisible, setMainVisible] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
@@ -84,7 +84,9 @@ export default function MainPage({ onLogin, onRegister }) {
               </div>
             </div>
             <nav className="mp-topbar-nav">
-              <a className="mp-nav-link" href="#features">Features</a>
+              <button type="button" className="mp-nav-link" onClick={() => onNavigate('about')}>About</button>
+              <button type="button" className="mp-nav-link" onClick={() => onNavigate('contact')}>Contact</button>
+              <button type="button" className="mp-nav-link" onClick={() => onNavigate('terms')}>Terms &amp; Policy</button>
             </nav>
             <div className="mp-topbar-actions">
               <button className="mp-topbar-register" onClick={onRegister}>Register</button>

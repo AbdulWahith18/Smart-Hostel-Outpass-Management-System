@@ -299,8 +299,14 @@ body:has(.mp-root) #root {
 }
 .mp-topbar-nav { display: flex; gap: 1.5rem; }
 .mp-nav-link {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
   font-size: 0.88rem; font-weight: 500;
   color: var(--t300); text-decoration: none;
+  font-family: var(--font-b);
+  cursor: pointer;
   transition: color 0.2s ease;
 }
 .mp-nav-link:hover { color: var(--lime-hi); }

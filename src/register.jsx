@@ -1,10 +1,23 @@
 import { useEffect, useState } from 'react'
 import './register.css'
 
-function Register({ onBackToLogin }) {
-  const [userType, setUserType] = useState('')
-  const [authorizedRc, setAuthorizedRc] = useState('')
+const defaultDraftValues = {
+  userType: '',
+  authorizedRc: '',
+  username: '',
+  email: '',
+  mobileNo: '',
+  password: '',
+  confirmPassword: '',
+  termsAccepted: false,
+}
+
+function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues, onDraftChange }) {
   const [registeredRcs, setRegisteredRcs] = useState([])
+
+  const updateDraft = (fieldName, fieldValue) => {
+    onDraftChange?.((currentDraft) => ({ ...currentDraft, [fieldName]: fieldValue }))
+  }
 
   const fetchRcUsers = async () => {
     try {
@@ -26,13 +39,13 @@ function Register({ onBackToLogin }) {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    const formData = new FormData(event.currentTarget)
-    const selectedUserType = formData.get('userType')?.toString() ?? ''
-    const username = formData.get('username')?.toString().trim() ?? ''
-    const authorizedRc = formData.get('authorizedRc')?.toString().trim() ?? ''
-    const mobileNo = formData.get('mobileno')?.toString().trim() ?? ''
-    const password = formData.get('password')?.toString() ?? ''
-    const confirmPassword = formData.get('confirmPassword')?.toString() ?? ''
+    const selectedUserType = draftValues.userType
+    const username = draftValues.username.trim()
+    const authorizedRc = draftValues.authorizedRc.trim()
+    const mobileNo = draftValues.mobileNo.trim()
+    const password = draftValues.password
+    const confirmPassword = draftValues.confirmPassword
+    const email = draftValues.email.trim()
 
     const isMobileValid = /^[0-9]{10}$/.test(mobileNo)
     const isPasswordValid =
@@ -52,6 +65,11 @@ function Register({ onBackToLogin }) {
 
     if (password !== confirmPassword) {
       alert('Password and re-entered password must match.')
+      return
+    }
+
+    if (!draftValues.termsAccepted) {
+      alert('Please accept Terms and Policy before registering.')
       return
     }
 
@@ -76,7 +94,7 @@ function Register({ onBackToLogin }) {
         body: JSON.stringify({
           userType: selectedUserType,
           username,
-          email: formData.get('email')?.toString() ?? '',
+          email,
           mobileNo,
           password,
           authorizedRc: selectedUserType === 'Student' ? authorizedRc : '',
@@ -97,6 +115,7 @@ function Register({ onBackToLogin }) {
       }
 
       alert('Account created successfully!')
+      onDraftChange?.({ ...defaultDraftValues })
       onBackToLogin?.()
     } catch {
       alert('Unable to reach server. Please try again.')
@@ -115,11 +134,11 @@ function Register({ onBackToLogin }) {
             className="input"
             id="userType"
             name="userType"
-            value={userType}
+            value={draftValues.userType}
             onChange={(event) => {
               const nextUserType = event.target.value
-              setUserType(nextUserType)
-              setAuthorizedRc('')
+              updateDraft('userType', nextUserType)
+              updateDraft('authorizedRc', '')
 
               if (nextUserType === 'Student') {
                 fetchRcUsers()
@@ -134,15 +153,15 @@ function Register({ onBackToLogin }) {
             <option value="RC">RC</option>
           </select>
 
-          {userType === 'Student' && (
+          {draftValues.userType === 'Student' && (
             <>
               <label htmlFor="authorizedRc">Authorized RC</label>
               <select
                 className="input"
                 id="authorizedRc"
                 name="authorizedRc"
-                value={authorizedRc}
-                onChange={(event) => setAuthorizedRc(event.target.value)}
+                value={draftValues.authorizedRc}
+                onChange={(event) => updateDraft('authorizedRc', event.target.value)}
                 required
               >
                 <option value="" disabled>
@@ -158,10 +177,28 @@ function Register({ onBackToLogin }) {
           )}
 
           <label htmlFor="username">Username</label>
-          <input className="input" id="username" name="username" type="text" placeholder="Enter username" required />
+          <input
+            className="input"
+            id="username"
+            name="username"
+            type="text"
+            placeholder="Enter username"
+            value={draftValues.username}
+            onChange={(event) => updateDraft('username', event.target.value)}
+            required
+          />
 
           <label htmlFor="email">Email</label>
-          <input className="input" id="email" name="email" type="email" placeholder="you@example.com" required />
+          <input
+            className="input"
+            id="email"
+            name="email"
+            type="email"
+            placeholder="you@example.com"
+            value={draftValues.email}
+            onChange={(event) => updateDraft('email', event.target.value)}
+            required
+          />
 
           <label htmlFor="mobileno">Mobile No</label>
           <input
@@ -172,6 +209,8 @@ function Register({ onBackToLogin }) {
             placeholder="Enter mobile number"
             maxLength={10}
             inputMode="numeric"
+            value={draftValues.mobileNo}
+            onChange={(event) => updateDraft('mobileNo', event.target.value)}
             required
           />
 
@@ -184,6 +223,8 @@ function Register({ onBackToLogin }) {
             placeholder="Enter password"
             minLength={8}
             maxLength={12}
+            value={draftValues.password}
+            onChange={(event) => updateDraft('password', event.target.value)}
             required
           />
 
@@ -194,10 +235,29 @@ function Register({ onBackToLogin }) {
             name="confirmPassword"
             type="password"
             placeholder="Re-enter password"
+            value={draftValues.confirmPassword}
+            onChange={(event) => updateDraft('confirmPassword', event.target.value)}
             required
           />
 
-          <button type="submit" className="btn btn-primary hover-lift">Create Account</button>
+          <label className="terms-consent" htmlFor="termsAccepted">
+            <input
+              id="termsAccepted"
+              name="termsAccepted"
+              type="checkbox"
+              checked={draftValues.termsAccepted}
+              onChange={(event) => updateDraft('termsAccepted', event.target.checked)}
+              required
+            />
+            <span>
+              I accept the Terms and Policy.{' '}
+              <button type="button" className="terms-link" onClick={onOpenTerms}>
+                View Terms and Policy
+              </button>
+            </span>
+          </label>
+
+          <button type="submit" className="btn btn-primary hover-lift" disabled={!draftValues.termsAccepted}>Create Account</button>
 
           {onBackToLogin && (
             <p className="switch-text">

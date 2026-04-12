@@ -204,6 +204,50 @@ body:has(.register-page) {
 	box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
 }
 
+.register-form button:not(.switch-link):disabled {
+	opacity: 0.65;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: 0 2px 8px rgba(20, 184, 166, 0.15);
+}
+
+.terms-consent {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	margin-top: 0.3rem;
+	font-size: 0.86rem;
+	line-height: 1.5;
+	text-transform: none;
+	letter-spacing: 0;
+	color: #47626c;
+}
+
+.terms-consent input[type='checkbox'] {
+	width: 1.05rem;
+	height: 1.05rem;
+	margin-top: 0.08rem;
+	accent-color: #0f766e;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.terms-link {
+	border: none;
+	background: transparent;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	font-weight: 700;
+	color: #0f766e;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.terms-link:hover {
+	color: #14b8a6;
+}
+
 .demo-flow-button {
 	margin-top: 0;
 }

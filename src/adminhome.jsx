@@ -63,6 +63,14 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
   const [chatQuestion, setChatQuestion] = useState('')
   const [isChatLoading, setIsChatLoading] = useState(false)
   const [chatContextMeta, setChatContextMeta] = useState(null)
+  const [accessMode, setAccessMode] = useState('requests')
+  const [accessStatusFilter, setAccessStatusFilter] = useState('all')
+  const [selectedRcUser, setSelectedRcUser] = useState('all')
+  const [selectedRcDecision, setSelectedRcDecision] = useState('all')
+  const [accessSearch, setAccessSearch] = useState('')
+  const [accessData, setAccessData] = useState({ requests: [], rcStatus: [] })
+  const [isAccessLoading, setIsAccessLoading] = useState(false)
+  const [accessErrorMessage, setAccessErrorMessage] = useState('')
   const [chatMessages, setChatMessages] = useState([
     {
       id: 'welcome',
@@ -71,6 +79,8 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     },
   ])
   const isAnalyticsView = activeView === 'analytics'
+  const isAccessView = activeView === 'access'
+  const isUserView = activeView === 'view' || activeView === 'manage'
   const chatStorageKey = `admin-ai-chat-${currentUser?.username ?? 'default'}`
 
   const fetchUsers = async () => {
@@ -133,6 +143,38 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     }
   }
 
+  const fetchAccessModeData = async () => {
+    setIsAccessLoading(true)
+
+    try {
+      const token = getAuthToken()
+      const response = await fetch('/api/admin/access-mode', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setAccessErrorMessage(data.message ?? 'Failed to fetch access mode data.')
+        setAccessData({ requests: [], rcStatus: [] })
+        return
+      }
+
+      setAccessErrorMessage('')
+      setAccessData({
+        requests: Array.isArray(data.requests) ? data.requests : [],
+        rcStatus: Array.isArray(data.rcStatus) ? data.rcStatus : [],
+      })
+    } catch {
+      setAccessErrorMessage('Unable to reach server. Please try again.')
+      setAccessData({ requests: [], rcStatus: [] })
+    } finally {
+      setIsAccessLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchUsers()
   }, [])
@@ -143,6 +185,14 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     }
 
     fetchAiInsights()
+  }, [activeView])
+
+  useEffect(() => {
+    if (activeView !== 'access') {
+      return
+    }
+
+    fetchAccessModeData()
   }, [activeView])
 
   useEffect(() => {
@@ -201,6 +251,63 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
       return fields.some((field) => field?.toString().toLowerCase().includes(normalizedSearch))
     })
   }, [normalizedSearch, visibleUsers])
+
+  const normalizedAccessSearch = accessSearch.trim().toLowerCase()
+  const filteredAccessRequests = useMemo(() => {
+    const requestsByStatus =
+      accessStatusFilter === 'all'
+        ? accessData.requests
+        : accessData.requests.filter((request) => request.status === accessStatusFilter)
+
+    if (!normalizedAccessSearch) {
+      return requestsByStatus
+    }
+
+    return requestsByStatus.filter((request) => {
+      const fields = [
+        request.studentUsername,
+        request.name,
+        request.registerNo,
+        request.authorizedRc,
+        request.status,
+        request.reason,
+      ]
+
+      return fields.some((field) => field?.toString().toLowerCase().includes(normalizedAccessSearch))
+    })
+  }, [accessData.requests, accessStatusFilter, normalizedAccessSearch])
+
+  const rcUserOptions = useMemo(
+    () => ['all', ...accessData.rcStatus.map((item) => item.rcName)],
+    [accessData.rcStatus]
+  )
+
+  const filteredRcStatus = useMemo(() => {
+    const byRcUser =
+      selectedRcUser === 'all'
+        ? accessData.rcStatus
+        : accessData.rcStatus.filter((item) => item.rcName === selectedRcUser)
+
+    if (selectedRcDecision === 'all') {
+      return byRcUser
+    }
+
+    return byRcUser.filter((item) => {
+      if (selectedRcDecision === 'approved') {
+        return item.approved > 0
+      }
+
+      if (selectedRcDecision === 'rejected') {
+        return item.rejected > 0
+      }
+
+      if (selectedRcDecision === 'pending') {
+        return item.pending > 0
+      }
+
+      return true
+    })
+  }, [accessData.rcStatus, selectedRcUser, selectedRcDecision])
 
   const sectionTitle = activeView === 'manage' ? 'Manage Users' : 'View Users'
   const sectionSubtitle =
@@ -546,7 +653,249 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
           </section>
         )}
 
-        {!isAnalyticsView && (
+        {isAccessView && (
+          <section className="admin-access-wrap" aria-label="Admin access mode">
+            <div className="admin-users-header">
+              <div className="admin-users-title-block">
+                <h2>Access Mode</h2>
+                <p className="admin-users-subtitle">View all student pass requests and RC approval status with separate toggle modes.</p>
+              </div>
+
+              <div className="admin-users-actions">
+                <button type="button" className="admin-refresh-button btn btn-outline hover-lift" onClick={fetchAccessModeData}>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <div className="admin-user-type-switch" role="tablist" aria-label="Switch access mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={accessMode === 'requests'}
+                className={`admin-user-type-btn btn btn-outline hover-lift ${accessMode === 'requests' ? 'admin-user-type-btn-active' : ''}`}
+                onClick={() => setAccessMode('requests')}
+              >
+                Student Requests
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={accessMode === 'rcStatus'}
+                className={`admin-user-type-btn btn btn-outline hover-lift ${accessMode === 'rcStatus' ? 'admin-user-type-btn-active' : ''}`}
+                onClick={() => setAccessMode('rcStatus')}
+              >
+                RC Approval Status
+              </button>
+            </div>
+
+            {isAccessLoading && <p className="admin-empty-text">Loading access mode data...</p>}
+            {!isAccessLoading && accessErrorMessage && <p className="admin-error-text">{accessErrorMessage}</p>}
+
+            {!isAccessLoading && !accessErrorMessage && accessMode === 'requests' && (
+              <>
+                <div className="admin-view-tools">
+                  <div className="admin-filter-group">
+                    <p className="admin-filter-title">Request Status</p>
+                    <div className="admin-user-type-switch" role="tablist" aria-label="Filter requests by status">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={accessStatusFilter === 'all'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${accessStatusFilter === 'all' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setAccessStatusFilter('all')}
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={accessStatusFilter === 'pending'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${accessStatusFilter === 'pending' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setAccessStatusFilter('pending')}
+                      >
+                        Pending
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={accessStatusFilter === 'approved'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${accessStatusFilter === 'approved' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setAccessStatusFilter('approved')}
+                      >
+                        Approved
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={accessStatusFilter === 'rejected'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${accessStatusFilter === 'rejected' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setAccessStatusFilter('rejected')}
+                      >
+                        Rejected
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="admin-search-wrap">
+                    <input
+                      type="text"
+                      className="admin-search-input input"
+                      placeholder="Search by student, register no, RC, reason or status"
+                      value={accessSearch}
+                      onChange={(event) => setAccessSearch(event.target.value)}
+                      aria-label="Search pass requests"
+                    />
+                  </div>
+                </div>
+
+                {filteredAccessRequests.length === 0 ? (
+                  <p className="admin-empty-text">No pass requests found for the selected filter.</p>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-md border p-5 mt-6 overflow-x-auto w-full">
+                    <table className="w-full text-sm border-collapse admin-user-table">
+                      <thead>
+                        <tr>
+                          <th className="text-left text-gray-600 border-b pb-2">Student</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Register No</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Authorized RC</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Reason</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Status</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Requested On</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAccessRequests.map((request) => (
+                          <tr key={request._id} className="admin-user-row hover:bg-gray-50 transition">
+                            <td>{request.studentUsername || request.name || '-'}</td>
+                            <td>{request.registerNo || '-'}</td>
+                            <td>{request.authorizedRc || '-'}</td>
+                            <td>{request.reason || '-'}</td>
+                            <td>
+                              <span
+                                className={
+                                  request.status === 'approved'
+                                    ? 'bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium'
+                                    : request.status === 'rejected'
+                                      ? 'bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium'
+                                      : 'bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium'
+                                }
+                              >
+                                {request.status || 'pending'}
+                              </span>
+                            </td>
+                            <td>{request.createdAt ? new Date(request.createdAt).toLocaleString() : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!isAccessLoading && !accessErrorMessage && accessMode === 'rcStatus' && (
+              <>
+                <div className="admin-view-tools">
+                  <div className="admin-filter-group">
+                    <p className="admin-filter-title">RC Users</p>
+                    <div className="admin-user-type-switch" role="tablist" aria-label="Filter RC by status category">
+                      {rcUserOptions.map((rcName) => (
+                        <button
+                          key={rcName}
+                          type="button"
+                          role="tab"
+                          aria-selected={selectedRcUser === rcName}
+                          className={`admin-user-type-btn btn btn-outline hover-lift ${selectedRcUser === rcName ? 'admin-user-type-btn-active' : ''}`}
+                          onClick={() => setSelectedRcUser(rcName)}
+                        >
+                          {rcName === 'all' ? 'All RC' : rcName}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="admin-filter-group">
+                    <p className="admin-filter-title">Status</p>
+                    <div className="admin-user-type-switch" role="tablist" aria-label="Filter selected RC by decision status">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={selectedRcDecision === 'all'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${selectedRcDecision === 'all' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setSelectedRcDecision('all')}
+                      >
+                        All
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={selectedRcDecision === 'approved'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${selectedRcDecision === 'approved' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setSelectedRcDecision('approved')}
+                      >
+                        Approved
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={selectedRcDecision === 'rejected'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${selectedRcDecision === 'rejected' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setSelectedRcDecision('rejected')}
+                      >
+                        Rejected
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={selectedRcDecision === 'pending'}
+                        className={`admin-user-type-btn btn btn-outline hover-lift ${selectedRcDecision === 'pending' ? 'admin-user-type-btn-active' : ''}`}
+                        onClick={() => setSelectedRcDecision('pending')}
+                      >
+                        Pending
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {accessData.rcStatus.length === 0 ? (
+                  <p className="admin-empty-text">No RC approval status data found.</p>
+                ) : filteredRcStatus.length === 0 ? (
+                  <p className="admin-empty-text">No RC found for the selected user/status combination.</p>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-md border p-5 mt-6 overflow-x-auto w-full">
+                    <table className="w-full text-sm border-collapse admin-user-table">
+                      <thead>
+                        <tr>
+                          <th className="text-left text-gray-600 border-b pb-2">RC Name</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Total Requests</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Approved</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Pending</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Rejected</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Approval Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRcStatus.map((item) => (
+                          <tr key={item.rcName} className="admin-user-row hover:bg-gray-50 transition">
+                            <td>{item.rcName}</td>
+                            <td>{item.total}</td>
+                            <td>{item.approved}</td>
+                            <td>{item.pending}</td>
+                            <td>{item.rejected}</td>
+                            <td>{item.approvalRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        )}
+
+        {isUserView && (
         <section
           className={`admin-users-section ${activeView === 'manage' ? 'admin-users-section-manage' : 'admin-users-section-view'}`}
           aria-label="Registered users"

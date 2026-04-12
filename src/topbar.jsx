@@ -3,7 +3,15 @@ import './topbar.css'
 
 const logoutIconSrc = `${new URL('./assets/logoutIcon.png', import.meta.url).href}${import.meta.env.DEV ? `?v=${Date.now()}` : ''}`
 
-function TopBar({ showLogout = false, showMenuToggle = false, isSidebarOpen = false, onMenuToggle, onLogout }) {
+function TopBar({
+  showLogout = false,
+  showMenuToggle = false,
+  isSidebarOpen = false,
+  onMenuToggle,
+  onLogout,
+  onHomeAction,
+  homeActionLabel = 'Back to Home',
+}) {
   return (
     <header className="top-bar" role="banner">
       <div className="top-bar-content">
@@ -34,6 +42,12 @@ function TopBar({ showLogout = false, showMenuToggle = false, isSidebarOpen = fa
                 <img src={logoutIconSrc} alt="" className="top-bar-logout-icon" />
               </span>
             </div>
+          )}
+
+          {!showLogout && onHomeAction && (
+            <button type="button" className="top-bar-home-action" onClick={onHomeAction}>
+              {homeActionLabel}
+            </button>
           )}
         </div>
       </div>

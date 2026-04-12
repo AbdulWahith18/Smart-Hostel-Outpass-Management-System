@@ -303,3 +303,76 @@ export const getAiAnalyticsSnapshot = async (_req, res) => {
     return res.status(500).json({ message: 'Failed to fetch AI analytics snapshot.', error: error.message })
   }
 }
+
+export const getAdminAccessModeData = async (_req, res) => {
+  try {
+    const [requests, rcUsers] = await Promise.all([
+      PassRequest.find({})
+        .select(
+          'studentUsername name registerNo authorizedRc status reason leaveDateTime returnDateTime approvedAt rejectedAt createdAt'
+        )
+        .sort({ createdAt: -1 })
+        .lean(),
+      User.find({ userType: 'RC' }).select('username').lean(),
+    ])
+
+    const rcSummaryMap = new Map()
+    const rcNameLookup = new Map()
+
+    for (const rcUser of rcUsers) {
+      const rcName = rcUser.username?.toString().trim()
+      if (!rcName) {
+        continue
+      }
+
+      rcSummaryMap.set(rcName, {
+        rcName,
+        total: 0,
+        approved: 0,
+        rejected: 0,
+        pending: 0,
+        approvalRate: 0,
+      })
+      rcNameLookup.set(rcName.toLowerCase(), rcName)
+    }
+
+    for (const request of requests) {
+      const requestRcName = request.authorizedRc?.toString().trim() || 'Unassigned'
+      const normalizedRcName = requestRcName.toLowerCase()
+      const rcName = rcNameLookup.get(normalizedRcName) ?? requestRcName
+
+      if (!rcSummaryMap.has(rcName)) {
+        rcSummaryMap.set(rcName, {
+          rcName,
+          total: 0,
+          approved: 0,
+          rejected: 0,
+          pending: 0,
+          approvalRate: 0,
+        })
+      }
+
+      const summary = rcSummaryMap.get(rcName)
+      summary.total += 1
+
+      if (request.status === 'approved') {
+        summary.approved += 1
+      } else if (request.status === 'rejected') {
+        summary.rejected += 1
+      } else {
+        summary.pending += 1
+      }
+    }
+
+    const rcStatus = [...rcSummaryMap.values()]
+      .map((summary) => ({
+        ...summary,
+        approvalRate: summary.total > 0 ? Math.round((summary.approved / summary.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total)
+
+    return res.status(200).json({ requests, rcStatus })
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to fetch access mode data.', error: error.message })
+  }
+}

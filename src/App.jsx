@@ -6,13 +6,30 @@ import StudentHome from './studenthome'
 import RCHome from './rchome'
 import AdminHome from './adminhome'
 import MainPage from './mainpage'
+import AboutPage from './aboutpage'
+import ContactPage from './contactpage'
+import TermsPolicyPage from './termspolicypage'
 import TopBar from './topbar'
 import { clearAuthToken, setAuthToken } from './utils/authToken'
+
+const initialRegisterDraft = {
+  userType: '',
+  authorizedRc: '',
+  username: '',
+  email: '',
+  mobileNo: '',
+  password: '',
+  confirmPassword: '',
+  termsAccepted: false,
+}
 
 function App() {
   const rememberedLoginKey = 'rememberedLogin'
   const [showMainPage, setShowMainPage] = useState(true)
+  const [publicPage, setPublicPage] = useState('home')
+  const [termsOpenedFromRegister, setTermsOpenedFromRegister] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
+  const [registerDraft, setRegisterDraft] = useState(initialRegisterDraft)
   const [showStudentHome, setShowStudentHome] = useState(false)
   const [showRCHome, setShowRCHome] = useState(false)
   const [showAdminHome, setShowAdminHome] = useState(false)
@@ -135,16 +152,48 @@ function App() {
     event.preventDefault()
     setShowMainPage(false)
     setShowRegister(true)
+    setTermsOpenedFromRegister(false)
   }
 
   const handleOpenLogin = () => {
     setShowMainPage(false)
     setShowRegister(false)
+    setTermsOpenedFromRegister(false)
   }
 
   const handleOpenRegisterFromMain = () => {
     setShowMainPage(false)
     setShowRegister(true)
+    setTermsOpenedFromRegister(false)
+  }
+
+  const handleBackToHome = () => {
+    setShowMainPage(true)
+    setPublicPage('home')
+    setShowRegister(false)
+    setTermsOpenedFromRegister(false)
+    setShowForgotCard(false)
+    clearResetForm()
+  }
+
+  const handleOpenTermsFromRegister = () => {
+    setTermsOpenedFromRegister(true)
+    setShowRegister(false)
+    setShowMainPage(false)
+    setPublicPage('terms')
+  }
+
+  const handleBackToRegisterFromTerms = () => {
+    setShowMainPage(false)
+    setShowRegister(true)
+    setTermsOpenedFromRegister(false)
+  }
+
+  const handleNavigatePublicPage = (pageName) => {
+    setPublicPage(pageName)
+    setShowMainPage(pageName === 'home')
+    setShowRegister(false)
+    setTermsOpenedFromRegister(false)
   }
 
   const handleBackToLogin = () => {
@@ -157,6 +206,7 @@ function App() {
     setEmail('')
     setPassword('')
     setIsSidebarOpen(false)
+    setRegisterDraft(initialRegisterDraft)
     setShowRegister(false)
     setShowStudentHome(false)
     setShowRCHome(false)
@@ -352,8 +402,13 @@ function App() {
   if (showRegister) {
     return (
       <>
-        <TopBar />
-        <Register onBackToLogin={handleBackToLogin} />
+        <TopBar onHomeAction={handleBackToHome} homeActionLabel="Back to Home" />
+        <Register
+          onBackToLogin={handleBackToLogin}
+          onOpenTerms={handleOpenTermsFromRegister}
+          draftValues={registerDraft}
+          onDraftChange={setRegisterDraft}
+        />
       </>
     )
   }
@@ -398,6 +453,7 @@ function App() {
     const adminMenuItems = [
       { key: 'view', label: 'View Users', icon: <FaUsers className="h-4 w-4" aria-hidden="true" /> },
       { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'access', label: 'Access Mode', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 
@@ -412,12 +468,31 @@ function App() {
   }
 
   if (showMainPage) {
-    return <MainPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} />
+    return <MainPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} onNavigate={handleNavigatePublicPage} />
+  }
+
+  if (publicPage === 'about') {
+    return <AboutPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} onNavigate={handleNavigatePublicPage} />
+  }
+
+  if (publicPage === 'contact') {
+    return <ContactPage onLogin={handleOpenLogin} onRegister={handleOpenRegisterFromMain} onNavigate={handleNavigatePublicPage} />
+  }
+
+  if (publicPage === 'terms') {
+    return (
+      <TermsPolicyPage
+        onLogin={handleOpenLogin}
+        onRegister={handleOpenRegisterFromMain}
+        onNavigate={handleNavigatePublicPage}
+        onBackToRegister={termsOpenedFromRegister ? handleBackToRegisterFromTerms : undefined}
+      />
+    )
   }
 
   return (
     <>
-      <TopBar />
+      <TopBar onHomeAction={handleBackToHome} homeActionLabel="Back to Home" />
       <main className="login-page">
         <section className="login-card saas-card fade-in" aria-labelledby="login-title">
           <h1 id="login-title">Login</h1>

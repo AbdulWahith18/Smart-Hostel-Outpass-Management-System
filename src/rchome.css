@@ -1,21 +1,21 @@
 ﻿.rc-pass-status-rejected .rc-pass-status-icon {
-	color: #dc2626 !important;
+	color: #ef4444 !important;
 }
 .rc-summary-card-total {
 	border-left: 4px solid #0b7a74 !important;
 }
 .rc-summary-card-rejected {
-	border-left: 4px solid #dc2626 !important;
+	border-left: 4px solid #ef4444 !important;
 }
 .rc-pass-status-rejected {
 	background: rgba(220, 38, 38, 0.18);
-	color: #b91c1c;
+	color: #ef4444;
 	box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.18), 0 4px 10px rgba(220, 38, 38, 0.22);
 }
 
 .pass-item.rejected {
 	opacity: 1;
-	border-left: 4px solid #dc2626;
+	border-left: 4px solid #ef4444;
 	background: #fff;
 	box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.13), 0 4px 10px rgba(220, 38, 38, 0.13);
 }
@@ -96,7 +96,7 @@
 }
 
 .rc-summary-card:nth-child(3) {
-	border-left-color:  #dc2626;
+	border-left-color:  #ef4444;
 }
 
 .rc-summary-icon {
