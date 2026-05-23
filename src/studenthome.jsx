@@ -549,6 +549,20 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                               <span className="pass-detail-value">{formatDateTime(passRequest.approvedAt)}</span>
                             </div>
                           )}
+
+                          {passRequest.status === 'approved' && (
+                            <div className="pass-detail-cell">
+                              <span className="pass-detail-label">Approved By</span>
+                              <span className="pass-detail-value">{passRequest.approvedBy || '-'}</span>
+                            </div>
+                          )}
+
+                          {passRequest.status === 'rejected' && (
+                            <div className="pass-detail-cell">
+                              <span className="pass-detail-label">Rejected By</span>
+                              <span className="pass-detail-value">{passRequest.rejectedBy || '-'}</span>
+                            </div>
+                          )}
                         </div>
                       </li>
                     ))}

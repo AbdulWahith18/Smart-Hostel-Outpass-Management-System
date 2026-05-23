@@ -1,9 +1,10 @@
 export const rejectPassRequest = async (req, res) => {
   try {
     const { requestId } = req.params
-    const { rcUsername = '' } = req.body
+    const rcUsername = req.body.rcUsername?.toString().trim() ?? ''
+    const actorName = req.body.actorName?.toString().trim() ?? rcUsername
 
-    if (!rcUsername.trim()) {
+    if (!actorName) {
       return res.status(400).json({ message: 'RC username is required to reject.' })
     }
 
@@ -13,7 +14,7 @@ export const rejectPassRequest = async (req, res) => {
       return res.status(404).json({ message: 'Pass request not found.' })
     }
 
-    if (passRequest.authorizedRc !== rcUsername.trim()) {
+    if (passRequest.authorizedRc !== rcUsername) {
       return res.status(403).json({ message: 'You can only reject students mapped to your RC account.' })
     }
 
@@ -23,7 +24,8 @@ export const rejectPassRequest = async (req, res) => {
 
     passRequest.status = 'rejected'
     passRequest.approvedAt = ''
-    passRequest.rejectedBy = rcUsername.trim()
+    passRequest.approvedBy = ''
+    passRequest.rejectedBy = actorName
     passRequest.rejectedAt = new Date().toISOString()
     await passRequest.save()
 
@@ -52,6 +54,9 @@ export const createPassRequest = async (req, res) => {
       guardianPhoneNo: req.body.guardianPhoneNo?.trim() ?? '',
       status: 'pending',
       approvedAt: '',
+      approvedBy: '',
+      rejectedBy: '',
+      rejectedAt: '',
     }
 
     if (!payload.studentEmail || !payload.studentUsername || !payload.authorizedRc) {
@@ -120,9 +125,10 @@ export const getPassRequestsForStudent = async (req, res) => {
 export const approvePassRequest = async (req, res) => {
   try {
     const { requestId } = req.params
-    const { rcUsername = '' } = req.body
+    const rcUsername = req.body.rcUsername?.toString().trim() ?? ''
+    const actorName = req.body.actorName?.toString().trim() ?? rcUsername
 
-    if (!rcUsername.trim()) {
+    if (!actorName) {
       return res.status(400).json({ message: 'RC username is required to approve.' })
     }
 
@@ -132,7 +138,7 @@ export const approvePassRequest = async (req, res) => {
       return res.status(404).json({ message: 'Pass request not found.' })
     }
 
-    if (passRequest.authorizedRc !== rcUsername.trim()) {
+    if (passRequest.authorizedRc !== rcUsername) {
       return res.status(403).json({ message: 'You can only approve students mapped to your RC account.' })
     }
 
@@ -142,6 +148,9 @@ export const approvePassRequest = async (req, res) => {
 
     passRequest.status = 'approved'
     passRequest.approvedAt = new Date().toISOString()
+    passRequest.approvedBy = actorName
+    passRequest.rejectedBy = ''
+    passRequest.rejectedAt = ''
     await passRequest.save()
 
     const io = req.app.get('io')

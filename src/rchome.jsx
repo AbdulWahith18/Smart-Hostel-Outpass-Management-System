@@ -131,8 +131,7 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
   const pendingRequests = requestsForRc.filter((request) => request.status === 'pending')
   const approvedRequests = requestsForRc.filter((request) => request.status === 'approved')
-  // Only show passes rejected by this RC
-  const rejectedRequests = requestsForRc.filter((request) => request.status === 'rejected' && request.rejectedBy === currentRc?.username)
+  const rejectedRequests = requestsForRc.filter((request) => request.status === 'rejected')
   let visibleRequests = pendingRequests
   if (activeView === 'approved') visibleRequests = approvedRequests
   else if (activeView === 'rejected') visibleRequests = rejectedRequests
@@ -440,10 +439,22 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
                             <span className="rc-pass-meta-value">{formatDateTime(request.approvedAt)}</span>
                           </div>
                         )}
+                        {request.status === 'approved' && (
+                          <div className="rc-pass-approval-cell rc-pass-approval-cell-right">
+                            <span className="rc-pass-meta-label">Approved By</span>
+                            <span className="rc-pass-meta-value">{request.approvedBy || '-'}</span>
+                          </div>
+                        )}
                         {request.status === 'rejected' && request.rejectedAt && (
                           <div className="rc-pass-approval-cell rc-pass-approval-cell-right">
                             <span className="rc-pass-meta-label">Rejected At</span>
                             <span className="rc-pass-meta-value">{formatDateTime(request.rejectedAt)}</span>
+                          </div>
+                        )}
+                        {request.status === 'rejected' && (
+                          <div className="rc-pass-approval-cell rc-pass-approval-cell-right">
+                            <span className="rc-pass-meta-label">Rejected By</span>
+                            <span className="rc-pass-meta-value">{request.rejectedBy || '-'}</span>
                           </div>
                         )}
                       </div>

@@ -309,7 +309,7 @@ export const getAdminAccessModeData = async (_req, res) => {
     const [requests, rcUsers] = await Promise.all([
       PassRequest.find({})
         .select(
-          'studentUsername name registerNo authorizedRc status reason leaveDateTime returnDateTime approvedAt rejectedAt createdAt'
+          'studentUsername name registerNo authorizedRc status reason leaveDateTime returnDateTime approvedAt approvedBy rejectedAt rejectedBy createdAt'
         )
         .sort({ createdAt: -1 })
         .lean(),
@@ -376,3 +376,69 @@ export const getAdminAccessModeData = async (_req, res) => {
     return res.status(500).json({ message: 'Failed to fetch access mode data.', error: error.message })
   }
 }
+
+const resolveDecisionActorName = async (req) => {
+  const requestActorName = req.body?.actorName?.toString().trim() ?? ''
+  if (requestActorName) {
+    return requestActorName
+  }
+
+  if (!req.user?.id) {
+    return ''
+  }
+
+  const authenticatedUser = await User.findById(req.user.id).select('username').lean()
+  return authenticatedUser?.username?.toString().trim() ?? ''
+}
+
+const applyAdminPassDecision = async (req, res, nextStatus) => {
+  try {
+    const { requestId } = req.params
+    const actorName = await resolveDecisionActorName(req)
+
+    if (!actorName) {
+      return res.status(400).json({ message: 'Admin username is required to update pass status.' })
+    }
+
+    const passRequest = await PassRequest.findById(requestId)
+
+    if (!passRequest) {
+      return res.status(404).json({ message: 'Pass request not found.' })
+    }
+
+    passRequest.status = nextStatus
+
+    if (nextStatus === 'approved') {
+      passRequest.approvedAt = new Date().toISOString()
+      passRequest.approvedBy = actorName
+      passRequest.rejectedAt = ''
+      passRequest.rejectedBy = ''
+    } else {
+      passRequest.rejectedAt = new Date().toISOString()
+      passRequest.rejectedBy = actorName
+      passRequest.approvedAt = ''
+      passRequest.approvedBy = ''
+    }
+
+    await passRequest.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to(`rc:${passRequest.authorizedRc}`).emit('pass:updated', passRequest)
+      io.to(`student:${passRequest.studentEmail}`).emit('pass:updated', passRequest)
+    }
+
+    return res.status(200).json({
+      message: nextStatus === 'approved' ? 'Pass approved successfully.' : 'Pass rejected successfully.',
+      passRequest,
+    })
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: `Failed to ${nextStatus === 'approved' ? 'approve' : 'reject'} pass request.`, error: error.message })
+  }
+}
+
+export const approvePassRequestInAccessMode = async (req, res) => applyAdminPassDecision(req, res, 'approved')
+
+export const rejectPassRequestInAccessMode = async (req, res) => applyAdminPassDecision(req, res, 'rejected')

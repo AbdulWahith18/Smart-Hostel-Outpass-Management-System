@@ -93,6 +93,11 @@ const passRequestSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+    approvedBy: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     rejectedBy: {
       type: String,
       default: '',

@@ -175,6 +175,31 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     }
   }
 
+  const handleAccessDecision = async (requestId, decision) => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/admin/access-mode/${requestId}/${decision}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ actorName: currentUser?.username ?? '' }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.message ?? `Failed to ${decision} pass request.`)
+        return
+      }
+
+      fetchAccessModeData()
+    } catch {
+      alert('Unable to reach server. Please try again.')
+    }
+  }
+
   useEffect(() => {
     fetchUsers()
   }, [])
@@ -761,7 +786,9 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                           <th className="text-left text-gray-600 border-b pb-2">Authorized RC</th>
                           <th className="text-left text-gray-600 border-b pb-2">Reason</th>
                           <th className="text-left text-gray-600 border-b pb-2">Status</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Decision By</th>
                           <th className="text-left text-gray-600 border-b pb-2">Requested On</th>
+                          <th className="text-left text-gray-600 border-b pb-2">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -784,7 +811,36 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
                                 {request.status || 'pending'}
                               </span>
                             </td>
+                            <td>
+                              {request.status === 'approved'
+                                ? request.approvedBy || '-'
+                                : request.status === 'rejected'
+                                  ? request.rejectedBy || '-'
+                                  : '-'}
+                            </td>
                             <td>{request.createdAt ? new Date(request.createdAt).toLocaleString() : '-'}</td>
+                            <td>
+                              {request.status === 'pending' ? (
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary hover-lift"
+                                    onClick={() => handleAccessDecision(request._id, 'approve')}
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger hover-lift"
+                                    onClick={() => handleAccessDecision(request._id, 'reject')}
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500">-</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
