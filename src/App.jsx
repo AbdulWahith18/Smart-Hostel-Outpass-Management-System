@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar, FaEnvelope, FaBroadcastTower } from 'react-icons/fa'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -419,6 +419,8 @@ function App() {
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
+      { key: 'queries', label: 'Queries', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'chatbox', label: 'Chatbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
     ]
 
     return renderDashboardLayout({
@@ -436,6 +438,8 @@ function App() {
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
+      { key: 'queries', label: 'Queries', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'chatbox', label: 'Chatbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 
@@ -454,6 +458,8 @@ function App() {
       { key: 'view', label: 'View Users', icon: <FaUsers className="h-4 w-4" aria-hidden="true" /> },
       { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
       { key: 'access', label: 'Access Mode', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'inbox', label: 'Inbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'broadcast', label: 'Broadcast', icon: <FaBroadcastTower className="h-4 w-4" aria-hidden="true" /> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
 

@@ -22,7 +22,67 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
   const [aiGeneratedAt, setAiGeneratedAt] = useState('')
   const [isAiLoading, setIsAiLoading] = useState(true)
   const [aiErrorMessage, setAiErrorMessage] = useState('')
+  const [messages, setMessages] = useState([])
+  const [chatboxMessages, setChatboxMessages] = useState([])
+  const [replyContent, setReplyContent] = useState('')
+  const [chatboxMessageContent, setChatboxMessageContent] = useState('')
+  const [replyError, setReplyError] = useState('')
+  const [isReplySending, setIsReplySending] = useState(false)
+  const [activeMessageTab, setActiveMessageTab] = useState('query')
+  const [announcementMessages, setAnnouncementMessages] = useState([])
+  const [chatboxClearedAt, setChatboxClearedAt] = useState(() => {
+    const storageKey = `rc-chat-cleared-${currentRc?.email?.trim().toLowerCase() ?? 'default'}`
+    const storedValue = localStorage.getItem(storageKey)
+    const parsedValue = Number(storedValue)
+    return Number.isFinite(parsedValue) ? parsedValue : 0
+  })
+
+  const sortMessagesChronologically = (list) => {
+    return [...list].sort((firstMessage, secondMessage) => {
+      const firstTime = new Date(firstMessage?.createdAt ?? 0).getTime()
+      const secondTime = new Date(secondMessage?.createdAt ?? 0).getTime()
+      return firstTime - secondTime
+    })
+  }
+
+  const upsertMessage = (previousMessages, incomingMessage) => {
+    if (!incomingMessage?._id) {
+      return previousMessages
+    }
+
+    const existingIndex = previousMessages.findIndex((message) => message._id === incomingMessage._id)
+
+    if (existingIndex !== -1) {
+      return previousMessages.map((message) => (message._id === incomingMessage._id ? incomingMessage : message))
+    }
+
+    return sortMessagesChronologically([...previousMessages, incomingMessage])
+  }
+
+  const getChatboxClearTimestamp = () => {
+    const storageKey = `rc-chat-cleared-${currentRc?.email?.trim().toLowerCase() ?? 'default'}`
+    const storedValue = localStorage.getItem(storageKey)
+    const parsedValue = Number(storedValue)
+    return Number.isFinite(parsedValue) ? parsedValue : 0
+  }
+
+  const clearChatboxForCurrentUser = () => {
+    const storageKey = `rc-chat-cleared-${currentRc?.email?.trim().toLowerCase() ?? 'default'}`
+    const now = Date.now()
+    localStorage.setItem(storageKey, String(now))
+    setChatboxClearedAt(now)
+    setChatboxMessages([])
+  }
+
+  useEffect(() => {
+    setChatboxClearedAt(getChatboxClearTimestamp())
+  }, [currentRc?.email])
+
   const isAnalyticsView = activeView === 'analytics'
+  const isQueriesView = activeView === 'queries'
+  const isChatboxView = activeView === 'chatbox'
+  const groupMessages = sortMessagesChronologically(chatboxMessages)
+  const announcementList = sortMessagesChronologically(announcementMessages.filter((message) => message.isBroadcast))
 
   const fetchAiSummary = async () => {
     setIsAiLoading(true)
@@ -58,6 +118,33 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
   useEffect(() => {
     const rcUsername = currentRc?.username?.trim() ?? ''
+
+    const fetchMessages = async () => {
+      if (!rcUsername) {
+        return
+      }
+
+      try {
+        const token = getAuthToken()
+        const response = await fetch(`/api/messages?userType=RC&email=${encodeURIComponent(currentRc?.email ?? '')}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const data = await response.json()
+        if (response.ok) {
+          const incomingMessages = Array.isArray(data.messages) ? data.messages : []
+          const clearedAt = getChatboxClearTimestamp()
+          const sortedMessages = sortMessagesChronologically(incomingMessages)
+          const chatMessages = sortedMessages.filter((message) => message.chatScope === 'students-rcs' && !message.isBroadcast && new Date(message.createdAt ?? 0).getTime() > clearedAt)
+          setChatboxMessages(chatMessages)
+          setMessages(sortedMessages)
+          setAnnouncementMessages(sortedMessages.filter((message) => message.isBroadcast && (message.recipientEmail === currentRc?.email || message.senderType === 'Admin')))
+        }
+      } catch {
+        setReplyError('Unable to load messages.')
+      }
+    }
+
+    fetchMessages()
 
     const fetchRequests = async () => {
       if (!rcUsername) {
@@ -112,11 +199,35 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
 
     socket.on('pass:new', upsertRequest)
     socket.on('pass:updated', upsertRequest)
+    socket.on('message:new', (incomingMessage) => {
+      const isGroupMessage = incomingMessage?.chatScope === 'students-rcs' && !incomingMessage?.isBroadcast
+      const isAnnouncement = incomingMessage?.isBroadcast && (incomingMessage?.recipientEmail === currentRc?.email || incomingMessage?.senderType === 'Admin')
+
+      if (isGroupMessage) {
+        const incomingTime = new Date(incomingMessage?.createdAt ?? 0).getTime()
+        if (incomingTime > getChatboxClearTimestamp()) {
+          setChatboxMessages((previousMessages) => upsertMessage(previousMessages, incomingMessage))
+        }
+      }
+
+      if (isAnnouncement) {
+        setAnnouncementMessages((previousAnnouncements) => upsertMessage(previousAnnouncements, incomingMessage))
+      }
+    })
+    socket.on('announcement:new', (incomingMessage) => {
+      const isAnnouncement = incomingMessage?.isBroadcast && (incomingMessage?.recipientEmail === currentRc?.email || incomingMessage?.senderType === 'Admin')
+
+      if (isAnnouncement) {
+        setAnnouncementMessages((previousAnnouncements) => upsertMessage(previousAnnouncements, incomingMessage))
+      }
+    })
 
     return () => {
       socket.emit('rc:leave', { rcUsername })
       socket.off('pass:new', upsertRequest)
       socket.off('pass:updated', upsertRequest)
+      socket.off('message:new')
+      socket.off('announcement:new')
       socket.disconnect()
     }
   }, [currentRc?.username])
@@ -172,6 +283,85 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       )
     } catch {
       alert('Unable to reach server. Please try again.')
+    }
+  }
+
+  const handleSendReply = async (event) => {
+    event.preventDefault()
+    if (!replyContent.trim()) {
+      setReplyError('Please enter a reply.')
+      return
+    }
+
+    setIsReplySending(true)
+    setReplyError('')
+
+    try {
+      const token = getAuthToken()
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: replyContent,
+          subject: 'Query to Admin',
+          recipientType: 'Admin',
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setReplyError(data.message ?? 'Failed to send reply.')
+        return
+      }
+
+      setReplyContent('')
+      setMessages((previousMessages) => upsertMessage(previousMessages, data.data))
+    } catch {
+      setReplyError('Unable to send reply right now.')
+    } finally {
+      setIsReplySending(false)
+    }
+  }
+
+  const handleSendChatboxMessage = async (event) => {
+    event.preventDefault()
+    if (!chatboxMessageContent.trim()) {
+      setReplyError('Please enter a message before sending.')
+      return
+    }
+
+    setIsReplySending(true)
+    setReplyError('')
+
+    try {
+      const token = getAuthToken()
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: chatboxMessageContent,
+          subject: 'Group chat message',
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setReplyError(data.message ?? 'Failed to send chat message.')
+        return
+      }
+
+      setChatboxMessageContent('')
+      setChatboxMessages((previousMessages) => upsertMessage(previousMessages, data.data))
+    } catch {
+      setReplyError('Unable to send chat message right now.')
+    } finally {
+      setIsReplySending(false)
     }
   }
 
@@ -304,7 +494,86 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
           </section>
         )}
 
-        {!isAnalyticsView && (
+        {isQueriesView && (
+          <section className="rc-analytics-wrap" aria-label="RC queries">
+            <div className="rc-analytics-card saas-card hover-lift analytics-card">
+              <div className="message-tabs">
+                <button type="button" className={`message-tab ${activeMessageTab === 'query' ? 'message-tab-active' : ''}`} onClick={() => setActiveMessageTab('query')}>
+                  Query to Admin
+                </button>
+                <button type="button" className={`message-tab ${activeMessageTab === 'announcement' ? 'message-tab-active' : ''}`} onClick={() => setActiveMessageTab('announcement')}>
+                  Announcement
+                </button>
+              </div>
+
+              {activeMessageTab === 'query' ? (
+                <form className="apply-pass-form" onSubmit={handleSendReply}>
+                  <p className="student-home-subtitle">Send a message to the admin for the shared group.</p>
+                  <label htmlFor="replyContent">Reply Message</label>
+                  <textarea id="replyContent" className="input" rows="5" placeholder="Type your reply" value={replyContent} onChange={(event) => setReplyContent(event.target.value)} />
+                  {replyError && <p className="admin-error-text">{replyError}</p>}
+                  <button type="submit" className="btn btn-primary hover-lift" disabled={isReplySending}>{isReplySending ? 'Sending...' : 'Send Reply'}</button>
+                </form>
+              ) : (
+                <div className="announcement-panel">
+                  <h3>Admin Announcements</h3>
+                  {announcementList.length === 0 ? (
+                    <p className="empty-text">No announcements yet.</p>
+                  ) : (
+                    <ul className="announcement-list">
+                      {announcementList.map((message) => (
+                        <li key={message._id} className="announcement-item">
+                          <p className="announcement-title">{message.subject || 'Announcement'}</p>
+                          <p className="announcement-content">{message.content}</p>
+                          <p className="admin-users-subtitle">{formatDateTime(message.createdAt)}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {isChatboxView && (
+          <section className="rc-analytics-wrap" aria-label="RC group chat">
+            <div className="rc-analytics-card saas-card hover-lift analytics-card">
+              <h3 className="rc-analytics-title">Group Chat</h3>
+              <div className="chatbox-shell">
+                <div className="chatbox-header-row">
+                  <p className="student-home-subtitle">Clear your local view anytime.</p>
+                  <button type="button" className="btn btn-outline hover-lift" onClick={clearChatboxForCurrentUser}>
+                    Clear Chat
+                  </button>
+                </div>
+                <div className="chatbox-messages">
+                  {groupMessages.length === 0 ? (
+                    <p className="empty-text">No messages yet.</p>
+                  ) : (
+                    groupMessages.map((message) => {
+                      const senderName = message.senderName || message.senderType || 'Unknown'
+                      const isCurrentUser = message.senderEmail === currentRc?.email
+                      return (
+                        <div key={message._id} className={`chat-bubble ${isCurrentUser ? 'chat-bubble-self' : ''}`}>
+                          {!isCurrentUser && <p className="chat-sender">{senderName}</p>}
+                          <p className="chat-text">{message.content}</p>
+                          <span className="chat-time">{formatDateTime(message.createdAt)}</span>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+                <form className="chatbox-input-row" onSubmit={handleSendChatboxMessage}>
+                  <textarea className="input" rows="2" placeholder="Type a message" value={chatboxMessageContent} onChange={(event) => setChatboxMessageContent(event.target.value)} />
+                  <button type="submit" className="btn btn-primary hover-lift" disabled={isReplySending}>{isReplySending ? 'Sending...' : 'Send'}</button>
+                </form>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {!isAnalyticsView && !isQueriesView && !isChatboxView && (
           <div className="pass-section">
             <h2>
               {activeView === 'approved'

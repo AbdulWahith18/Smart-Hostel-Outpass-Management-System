@@ -280,6 +280,124 @@
 	filter: brightness(1.03);
 }
 
+.message-tabs {
+	display: flex;
+	gap: 0.65rem;
+	margin-bottom: 1rem;
+}
+
+.message-tab {
+	border: 1px solid rgba(0, 94, 89, 0.18);
+	background: #f8fafb;
+	color: #304248;
+	padding: 0.6rem 1rem;
+	border-radius: 999px;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.message-tab-active {
+	background: var(--gradient-primary);
+	color: white;
+	border-color: transparent;
+}
+
+.announcement-panel, .chatbox-shell {
+	display: grid;
+	gap: 0.95rem;
+}
+
+.announcement-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.announcement-item {
+	padding: 0.95rem 1rem;
+	border-radius: 14px;
+	background: #f8fafb;
+	border: 1px solid rgba(0, 94, 89, 0.12);
+}
+
+.announcement-title {
+	margin: 0 0 0.3rem;
+	font-weight: 700;
+	color: var(--text-primary);
+}
+
+.announcement-content {
+	margin: 0 0 0.3rem;
+	color: #4b5563;
+}
+
+.chatbox-messages {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem;
+	border-radius: 16px;
+	background: linear-gradient(180deg, rgba(248, 250, 251, 0.95), rgba(241, 245, 249, 0.95));
+	min-height: 280px;
+	max-height: 420px;
+	overflow-y: auto;
+}
+
+.chat-bubble {
+	max-width: 78%;
+	padding: 0.75rem 0.9rem;
+	border-radius: 14px 14px 14px 4px;
+	background: white;
+	box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+	align-self: flex-start;
+}
+
+.chat-bubble-self {
+	align-self: flex-end;
+	background: #dcf8c6;
+	border-radius: 14px 14px 4px 14px;
+}
+
+.chat-sender {
+	margin: 0 0 0.25rem;
+	font-weight: 700;
+	font-size: 0.82rem;
+	color: #0f766e;
+}
+
+.chat-text {
+	margin: 0;
+	color: #111827;
+	white-space: pre-wrap;
+}
+
+.chat-time {
+	display: block;
+	margin-top: 0.35rem;
+	font-size: 0.72rem;
+	color: #6b7280;
+}
+
+.chatbox-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.chatbox-input-row {
+	display: flex;
+	gap: 0.7rem;
+	align-items: flex-end;
+}
+
+.chatbox-input-row textarea {
+	flex: 1;
+	min-height: 48px;
+}
+
 .student-apply-button:focus-visible {
 	outline: none;
 	box-shadow: 0 0 0 4px rgba(0, 94, 89, 0.22), 0 14px 24px rgba(0, 94, 89, 0.34);

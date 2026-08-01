@@ -9,6 +9,7 @@ import passRequestRoutes from './server/routes/passRequestRoutes.js'
 import adminRoutes from './server/routes/adminRoutes.js'
 import analyticsRoutes from './server/routes/analyticsRoutes.js'
 import aiRoutes from './server/routes/aiRoutes.js'
+import messageRoutes from './server/routes/messageRoutes.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -40,6 +41,7 @@ io.on('connection', (socket) => {
     }
 
     socket.join(`student:${normalizedEmail}`)
+    socket.join('group:students-rcs')
   })
 
   socket.on('student:leave', ({ studentEmail = '' } = {}) => {
@@ -58,6 +60,7 @@ io.on('connection', (socket) => {
     }
 
     socket.join(`rc:${normalizedUsername}`)
+    socket.join('group:students-rcs')
   })
 
   socket.on('rc:leave', ({ rcUsername = '' } = {}) => {
@@ -67,6 +70,25 @@ io.on('connection', (socket) => {
     }
 
     socket.leave(`rc:${normalizedUsername}`)
+  })
+
+  socket.on('admin:join', ({ adminEmail = '' } = {}) => {
+    const normalizedEmail = adminEmail.toString().trim().toLowerCase()
+    if (!normalizedEmail) {
+      return
+    }
+
+    socket.join(`admin:${normalizedEmail}`)
+    socket.join('admin:all')
+  })
+
+  socket.on('admin:leave', ({ adminEmail = '' } = {}) => {
+    const normalizedEmail = adminEmail.toString().trim().toLowerCase()
+    if (!normalizedEmail) {
+      return
+    }
+
+    socket.leave(`admin:${normalizedEmail}`)
   })
 })
 
@@ -107,6 +129,7 @@ app.use('/api/pass-requests', passRequestRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/admin', analyticsRoutes)
 app.use('/api/ai', aiRoutes)
+app.use('/api/messages', messageRoutes)
 
 /* DATABASE CONNECTION */
 mongoose

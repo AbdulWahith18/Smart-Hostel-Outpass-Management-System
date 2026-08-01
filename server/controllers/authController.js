@@ -50,16 +50,21 @@ const buildAuthErrorResponse = (error, fallbackMessage) => {
   }
 }
 
-const buildToken = (user) =>
-  jwt.sign(
+const buildToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured.");
+  }
+
+  return jwt.sign(
     {
       id: user._id,
       userType: user.userType,
       email: user.email,
     },
-    process.env.JWT_SECRET || 'change_this_jwt_secret',
-    { expiresIn: '7d' }
-  )
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
 
 export const registerUser = async (req, res) => {
   try {

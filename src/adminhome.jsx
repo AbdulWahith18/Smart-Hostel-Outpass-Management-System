@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './adminhome.css'
+import { io } from "socket.io-client"
 import { getAuthToken } from './utils/authToken'
 
 const INACTIVITY_DAYS = 60
@@ -78,10 +79,34 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
       text: 'Ask me about users, pass requests, day-wise trends, or date-wise request counts.',
     },
   ])
+  const [messages, setMessages] = useState([])
+  const [activeInboxFilter, setActiveInboxFilter] = useState('all')
+  const [broadcastSubject, setBroadcastSubject] = useState('')
+  const [broadcastContent, setBroadcastContent] = useState('')
+  const [broadcastError, setBroadcastError] = useState('')
+  const [isBroadcastSending, setIsBroadcastSending] = useState(false)
   const isAnalyticsView = activeView === 'analytics'
   const isAccessView = activeView === 'access'
+  const isInboxView = activeView === 'inbox' || activeView === 'queries'
+  const isBroadcastView = activeView === 'broadcast'
   const isUserView = activeView === 'view' || activeView === 'manage'
   const chatStorageKey = `admin-ai-chat-${currentUser?.username ?? 'default'}`
+
+  const fetchMessages = async () => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/messages?userType=Admin&email=${encodeURIComponent(currentUser?.email ?? '')}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      const data = await response.json()
+      if (response.ok) {
+        setMessages(Array.isArray(data.messages) ? data.messages : [])
+      }
+    } catch {
+      setMessages([])
+    }
+  }
 
   const fetchUsers = async () => {
     setIsLoading(true)
@@ -202,7 +227,8 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
   useEffect(() => {
     fetchUsers()
-  }, [])
+    fetchMessages()
+  }, [currentUser?.email])
 
   useEffect(() => {
     if (activeView !== 'analytics') {
@@ -219,6 +245,32 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
     fetchAccessModeData()
   }, [activeView])
+
+  useEffect(() => {
+    const adminEmail = currentUser?.email?.trim().toLowerCase() ?? ''
+    if (!adminEmail) {
+      return
+    }
+
+    const socket = io('/', {
+      transports: ['websocket', 'polling'],
+    })
+
+    socket.emit('admin:join', { adminEmail })
+    socket.on('message:new', (incomingMessage) => {
+      const senderEmail = incomingMessage?.senderEmail?.toString().toLowerCase() ?? ''
+      const recipientEmail = incomingMessage?.recipientEmail?.toString().toLowerCase() ?? ''
+      if (senderEmail === adminEmail || recipientEmail === adminEmail || incomingMessage?.recipientType === 'Admin') {
+        setMessages((previousMessages) => [incomingMessage, ...previousMessages])
+      }
+    })
+
+    return () => {
+      socket.emit('admin:leave', { adminEmail })
+      socket.off('message:new')
+      socket.disconnect()
+    }
+  }, [currentUser?.email])
 
   useEffect(() => {
     try {
@@ -251,6 +303,25 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
   const studentCount = useMemo(() => users.filter((user) => user.userType === 'Student').length, [users])
   const rcCount = useMemo(() => users.filter((user) => user.userType === 'RC').length, [users])
+  const adminInboxMessages = useMemo(() => {
+    return messages.filter((message) => {
+      const senderType = message?.senderType?.toString().toLowerCase()
+      const recipientType = message?.recipientType?.toString().toLowerCase()
+      return (senderType === 'student' || senderType === 'rc') && recipientType === 'admin'
+    })
+  }, [messages])
+
+  const visibleInboxMessages = useMemo(() => {
+    if (activeInboxFilter === 'student') {
+      return adminInboxMessages.filter((message) => message?.senderType?.toString().toLowerCase() === 'student')
+    }
+
+    if (activeInboxFilter === 'rc') {
+      return adminInboxMessages.filter((message) => message?.senderType?.toString().toLowerCase() === 'rc')
+    }
+
+    return adminInboxMessages
+  }, [activeInboxFilter, adminInboxMessages])
   const visibleUsers = useMemo(() => {
 
     const usersByType =
@@ -432,6 +503,46 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     }
   }
 
+  const handleBroadcastMessage = async (event) => {
+    event.preventDefault()
+    if (!broadcastContent.trim()) {
+      setBroadcastError('Please enter a broadcast message.')
+      return
+    }
+
+    setIsBroadcastSending(true)
+    setBroadcastError('')
+
+    try {
+      const token = getAuthToken()
+      const response = await fetch('/api/messages/broadcast', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subject: broadcastSubject || 'Announcement',
+          content: broadcastContent,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setBroadcastError(data.message ?? 'Failed to broadcast message.')
+        return
+      }
+
+      setBroadcastSubject('')
+      setBroadcastContent('')
+      setMessages((previousMessages) => [...(Array.isArray(data.messages) ? data.messages : []), ...previousMessages])
+    } catch {
+      setBroadcastError('Unable to broadcast right now.')
+    } finally {
+      setIsBroadcastSending(false)
+    }
+  }
+
   const clearChat = () => {
     const defaultMessage = {
       id: `welcome-${Date.now()}`,
@@ -567,6 +678,76 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
             </div>
           </article>
         </section>
+
+        {isInboxView && (
+          <section className="admin-access-wrap" aria-label="Admin inbox">
+            <div className="admin-users-header">
+              <div className="admin-users-title-block">
+                <h2>Inbox</h2>
+                <p className="admin-users-subtitle">See incoming queries from students and RCs in one place.</p>
+              </div>
+            </div>
+
+            <div className="admin-access-wrap">
+              <div className="admin-analytics-card saas-card hover-lift analytics-card">
+                <div className="admin-analytics-header-row">
+                  <h3 className="admin-analytics-title">Incoming Queries</h3>
+                  <div className="message-tabs">
+                    <button type="button" className={`message-tab ${activeInboxFilter === 'all' ? 'message-tab-active' : ''}`} onClick={() => setActiveInboxFilter('all')}>
+                      All
+                    </button>
+                    <button type="button" className={`message-tab ${activeInboxFilter === 'student' ? 'message-tab-active' : ''}`} onClick={() => setActiveInboxFilter('student')}>
+                      Students
+                    </button>
+                    <button type="button" className={`message-tab ${activeInboxFilter === 'rc' ? 'message-tab-active' : ''}`} onClick={() => setActiveInboxFilter('rc')}>
+                      RCs
+                    </button>
+                  </div>
+                </div>
+                {visibleInboxMessages.length === 0 ? (
+                  <p className="admin-empty-text">No inbox messages yet.</p>
+                ) : (
+                  <ul className="pass-list">
+                    {visibleInboxMessages.map((message) => (
+                      <li key={message._id} className="pass-item">
+                        <p className="rc-pass-card-kicker">
+                          {message.senderType === 'Student' ? 'From Student' : message.senderType === 'RC' ? 'From RC' : 'From Admin'}
+                        </p>
+                        <h3 className="rc-pass-card-register">{message.senderName || message.senderEmail || 'Unknown sender'}</h3>
+                        <p className="rc-pass-detail-value">{message.content}</p>
+                        <p className="admin-users-subtitle">{new Date(message.createdAt).toLocaleString()}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {isBroadcastView && (
+          <section className="admin-access-wrap" aria-label="Admin broadcast">
+            <div className="admin-users-header">
+              <div className="admin-users-title-block">
+                <h2>Broadcast</h2>
+                <p className="admin-users-subtitle">Send announcements to every student and RC at once.</p>
+              </div>
+            </div>
+
+            <div className="admin-analytics-card saas-card hover-lift analytics-card">
+              <form className="apply-pass-form" onSubmit={handleBroadcastMessage}>
+                <label htmlFor="broadcastSubject">Subject</label>
+                <input id="broadcastSubject" className="input" type="text" placeholder="Announcement" value={broadcastSubject} onChange={(event) => setBroadcastSubject(event.target.value)} />
+
+                <label htmlFor="broadcastContent">Message</label>
+                <textarea id="broadcastContent" className="input" rows="6" placeholder="Type a broadcast message" value={broadcastContent} onChange={(event) => setBroadcastContent(event.target.value)} />
+
+                {broadcastError && <p className="admin-error-text">{broadcastError}</p>}
+                <button type="submit" className="btn btn-primary hover-lift" disabled={isBroadcastSending}>{isBroadcastSending ? 'Sending...' : 'Broadcast'}</button>
+              </form>
+            </div>
+          </section>
+        )}
 
         {isAnalyticsView && (
           <section className="admin-analytics-wrap" aria-label="AI analytics summary">
