@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'node:http'
 import { Server as SocketIOServer } from 'socket.io'
 import authRoutes from './server/routes/authRoutes.js'
@@ -13,6 +15,9 @@ import messageRoutes from './server/routes/messageRoutes.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 const httpServer = createServer(app)
@@ -130,6 +135,18 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/admin', analyticsRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/messages', messageRoutes)
+
+/* SERVE VITE PRODUCTION BUILD IN UNIFIED DEPLOYMENT */
+app.use(express.static(path.join(__dirname, 'dist')))
+
+/* FALLBACK FOR SPA FRONTEND ROUTING */
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    return next()
+  }
+
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'))
+})
 
 /* DATABASE CONNECTION */
 mongoose
