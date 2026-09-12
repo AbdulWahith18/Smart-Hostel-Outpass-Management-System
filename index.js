@@ -12,6 +12,7 @@ import adminRoutes from './server/routes/adminRoutes.js'
 import analyticsRoutes from './server/routes/analyticsRoutes.js'
 import aiRoutes from './server/routes/aiRoutes.js'
 import messageRoutes from './server/routes/messageRoutes.js'
+import hostelAllocationRoutes from './server/routes/hostelAllocationRoutes.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -135,6 +136,7 @@ app.use('/api/admin', adminRoutes)
 app.use('/api/admin', analyticsRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/messages', messageRoutes)
+app.use('/api/hostel-allocations', hostelAllocationRoutes)
 
 /* SERVE VITE PRODUCTION BUILD IN UNIFIED DEPLOYMENT */
 app.use(express.static(path.join(__dirname, 'dist')))
@@ -148,6 +150,11 @@ app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'))
 })
 
+/* START SERVER IMMEDIATELY TO PREVENT DEV PROXY RACE CONDITIONS */
+httpServer.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`)
+})
+
 /* DATABASE CONNECTION */
 mongoose
   .connect(process.env.MONGO_URI, {
@@ -156,9 +163,6 @@ mongoose
   })
   .then(() => {
     console.log('MongoDB Connected ✅')
-    httpServer.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`)
-    })
   })
   .catch((error) => {
     console.error('MongoDB connection failed:', error.message)

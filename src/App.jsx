@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar, FaEnvelope, FaBroadcastTower } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar, FaEnvelope, FaBroadcastTower, FaUserClock, FaBuilding } from 'react-icons/fa'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -11,6 +11,7 @@ import ContactPage from './contactpage'
 import TermsPolicyPage from './termspolicypage'
 import TopBar from './topbar'
 import { clearAuthToken, setAuthToken } from './utils/authToken'
+import { useToast } from './components/Toast'
 
 const initialRegisterDraft = {
   userType: '',
@@ -24,6 +25,8 @@ const initialRegisterDraft = {
 }
 
 function App() {
+  const toast = useToast()
+
   const rememberedLoginKey = 'rememberedLogin'
   const [showMainPage, setShowMainPage] = useState(true)
   const [publicPage, setPublicPage] = useState('home')
@@ -105,7 +108,7 @@ function App() {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Login failed.')
+        toast.error(data.message ?? 'Login failed.')
         return
       }
 
@@ -123,6 +126,7 @@ function App() {
 
       setAuthToken(data.token)
       setCurrentUser(data.user)
+      toast.success(data.message ?? 'Login successful.')
 
       if (data.user.userType === 'Student') {
         setStudentActiveView('apply')
@@ -144,9 +148,10 @@ function App() {
         setShowAdminHome(true)
       }
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     }
   }
+
 
   const handleOpenRegister = (event) => {
     event.preventDefault()
@@ -223,7 +228,7 @@ function App() {
 
   const handleSendOtp = async () => {
     if (!resetIdentifier.trim()) {
-      alert('Please enter username/email first.')
+      toast.warning('Please enter username/email first.')
       return
     }
 
@@ -239,14 +244,14 @@ function App() {
 
       const data = await response.json()
       if (!response.ok) {
-        alert(data.message ?? 'Failed to send OTP.')
+        toast.error(data.message ?? 'Failed to send OTP.')
         return
       }
 
       setIsOtpVerified(false)
-      alert(data.message ?? 'OTP sent to your registered email.')
+      toast.success(data.message ?? 'OTP sent to your registered email.')
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     } finally {
       setIsSendingOtp(false)
     }
@@ -254,7 +259,7 @@ function App() {
 
   const handleVerifyOtp = async () => {
     if (!resetIdentifier.trim() || !resetOtp.trim()) {
-      alert('Please enter username/email and OTP.')
+      toast.warning('Please enter username/email and OTP.')
       return
     }
 
@@ -271,15 +276,15 @@ function App() {
       const data = await response.json()
       if (!response.ok) {
         setIsOtpVerified(false)
-        alert(data.message ?? 'Failed to verify OTP.')
+        toast.error(data.message ?? 'Failed to verify OTP.')
         return
       }
 
       setIsOtpVerified(true)
-      alert(data.message ?? 'OTP verified successfully.')
+      toast.success(data.message ?? 'OTP verified successfully.')
     } catch {
       setIsOtpVerified(false)
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     } finally {
       setIsVerifyingOtp(false)
     }
@@ -289,17 +294,17 @@ function App() {
     event.preventDefault()
 
     if (!resetIdentifier.trim() || !resetOtp.trim() || !resetNewPassword || !resetConfirmPassword) {
-      alert('Please fill username/email, OTP, new password, and confirm password.')
+      toast.warning('Please fill username/email, OTP, new password, and confirm password.')
       return
     }
 
     if (!isOtpVerified) {
-      alert('Please verify OTP before updating password.')
+      toast.warning('Please verify OTP before updating password.')
       return
     }
 
     if (resetNewPassword !== resetConfirmPassword) {
-      alert('New password and confirm password must match.')
+      toast.warning('New password and confirm password must match.')
       return
     }
 
@@ -320,19 +325,20 @@ function App() {
 
       const data = await response.json()
       if (!response.ok) {
-        alert(data.message ?? 'Failed to reset password.')
+        toast.error(data.message ?? 'Failed to reset password.')
         return
       }
 
-      alert(data.message ?? 'Password reset successful. Please login with your new password.')
+      toast.success(data.message ?? 'Password reset successful. Please login with your new password.')
       setShowForgotCard(false)
       clearResetForm()
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     } finally {
       setIsResettingPassword(false)
     }
   }
+
 
   const renderDashboardLayout = ({ menuItems, activeView, onViewChange, sidebarAriaLabel, navAriaLabel, content }) => (
     <>
@@ -419,6 +425,7 @@ function App() {
       { key: 'pending', label: 'Pending', icon: <FaClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
+      { key: 'hostel', label: 'Hostel Booking', icon: <FaBuilding className="h-4 w-4" aria-hidden="true" /> },
       { key: 'queries', label: 'Queries', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
       { key: 'chatbox', label: 'Chatbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
     ]
@@ -457,11 +464,14 @@ function App() {
     const adminMenuItems = [
       { key: 'view', label: 'View Users', icon: <FaUsers className="h-4 w-4" aria-hidden="true" /> },
       { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'pending-rcs', label: 'Pending RCs', icon: <FaUserClock className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'hostel', label: 'Hostel Allocation', icon: <FaBuilding className="h-4 w-4" aria-hidden="true" /> },
       { key: 'access', label: 'Access Mode', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
       { key: 'inbox', label: 'Inbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
       { key: 'broadcast', label: 'Broadcast', icon: <FaBroadcastTower className="h-4 w-4" aria-hidden="true" /> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
+
 
     return renderDashboardLayout({
       menuItems: adminMenuItems,

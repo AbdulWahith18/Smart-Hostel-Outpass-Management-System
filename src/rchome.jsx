@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import './rchome.css'
 import { getAuthToken } from './utils/authToken'
+import { useToast } from './components/Toast'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -17,7 +18,9 @@ const formatDateTime = (value) => {
 }
 
 function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
+  const toast = useToast()
   const [requestsForRc, setRequestsForRc] = useState([])
+
   const [aiInsights, setAiInsights] = useState([])
   const [aiGeneratedAt, setAiGeneratedAt] = useState('')
   const [isAiLoading, setIsAiLoading] = useState(true)
@@ -157,17 +160,18 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
         const data = await response.json()
 
         if (!response.ok) {
-          alert(data.message ?? 'Failed to fetch pass requests.')
+          toast.error(data.message ?? 'Failed to fetch pass requests.')
           return
         }
 
         setRequestsForRc(data.requests ?? [])
       } catch {
-        alert('Unable to reach server. Please try again.')
+        toast.error('Unable to reach server. Please try again.')
       }
     }
 
     fetchRequests()
+
 
     if (!rcUsername) {
       return
@@ -274,17 +278,20 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Failed to approve pass request.')
+        toast.error(data.message ?? 'Failed to approve pass request.')
         return
       }
+
+      toast.success(data.message ?? 'Pass request approved successfully.')
 
       setRequestsForRc((requests) =>
         requests.map((request) => (request._id === requestId ? data.passRequest : request))
       )
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     }
   }
+
 
   const handleSendReply = async (event) => {
     event.preventDefault()
@@ -378,17 +385,20 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Failed to reject pass request.')
+        toast.error(data.message ?? 'Failed to reject pass request.')
         return
       }
+
+      toast.success(data.message ?? 'Pass request rejected.')
 
       setRequestsForRc((requests) =>
         requests.map((request) => (request._id === requestId ? data.passRequest : request))
       )
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     }
   }
+
 
   return (
     <main className="rc-home-page">

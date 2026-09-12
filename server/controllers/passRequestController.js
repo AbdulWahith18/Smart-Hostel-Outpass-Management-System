@@ -71,6 +71,16 @@ export const createPassRequest = async (req, res) => {
       return res.status(400).json({ message: 'Phone numbers must be exactly 10 digits.' })
     }
 
+    const existingPass = await PassRequest.findOne({
+      studentEmail: payload.studentEmail,
+      leaveDateTime: payload.leaveDateTime,
+      returnDateTime: payload.returnDateTime,
+    })
+
+    if (existingPass) {
+      return res.status(409).json({ message: 'This outpass request has already been submitted.' })
+    }
+
     const passRequest = await PassRequest.create(payload)
 
     const io = req.app.get('io')
@@ -81,9 +91,13 @@ export const createPassRequest = async (req, res) => {
 
     return res.status(201).json({ message: 'Pass application submitted successfully.', passRequest })
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({ message: 'This outpass request has already been submitted.' })
+    }
     return res.status(500).json({ message: 'Failed to submit pass request.', error: error.message })
   }
 }
+
 
 export const getPassRequestsForRc = async (req, res) => {
   try {

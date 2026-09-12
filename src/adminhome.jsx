@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import './adminhome.css'
 import { io } from "socket.io-client"
 import { getAuthToken } from './utils/authToken'
+import { useToast } from './components/Toast'
+import HostelAllocationAdmin from './components/HostelAllocationAdmin'
 
 const INACTIVITY_DAYS = 60
 
@@ -45,6 +47,7 @@ const formatLastLogin = (dateValue) => {
 }
 
 function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
+  const toast = useToast()
   const defaultChatHints = [
     'How many users are present now?',
     'How many students applied for outpass this week?',
@@ -53,6 +56,9 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
   ]
 
   const [users, setUsers] = useState([])
+  const [pendingRcs, setPendingRcs] = useState([])
+  const [isPendingLoading, setIsPendingLoading] = useState(false)
+  const [pendingErrorMessage, setPendingErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState('')
   const [aiInsights, setAiInsights] = useState([])
@@ -85,12 +91,93 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
   const [broadcastContent, setBroadcastContent] = useState('')
   const [broadcastError, setBroadcastError] = useState('')
   const [isBroadcastSending, setIsBroadcastSending] = useState(false)
+
   const isAnalyticsView = activeView === 'analytics'
   const isAccessView = activeView === 'access'
   const isInboxView = activeView === 'inbox' || activeView === 'queries'
   const isBroadcastView = activeView === 'broadcast'
   const isUserView = activeView === 'view' || activeView === 'manage'
+  const isPendingRcsView = activeView === 'pending-rcs'
+  const isHostelView = activeView === 'hostel'
   const chatStorageKey = `admin-ai-chat-${currentUser?.username ?? 'default'}`
+
+  const fetchPendingRcs = async () => {
+    setIsPendingLoading(true)
+    try {
+      const token = getAuthToken()
+      const response = await fetch('/api/admin/pending-rcs', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        setPendingErrorMessage(data.message ?? 'Failed to fetch pending RC registrations.')
+        setPendingRcs([])
+        return
+      }
+
+      setPendingErrorMessage('')
+      setPendingRcs(Array.isArray(data.pendingRcs) ? data.pendingRcs : [])
+    } catch {
+      setPendingErrorMessage('Unable to reach server. Please try again.')
+      setPendingRcs([])
+    } finally {
+      setIsPendingLoading(false)
+    }
+  }
+
+  const handleApproveRc = async (rcId) => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/admin/rc-registrations/${rcId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        toast.error(data.message ?? 'Failed to approve RC registration.')
+        return
+      }
+
+      toast.success(data.message ?? 'RC registration approved successfully!')
+      setPendingRcs((prev) => prev.filter((item) => item._id !== rcId))
+      fetchUsers()
+    } catch {
+      toast.error('Unable to reach server. Please try again.')
+    }
+  }
+
+  const handleRejectRc = async (rcId) => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/admin/rc-registrations/${rcId}/reject`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        toast.error(data.message ?? 'Failed to reject RC registration.')
+        return
+      }
+
+      toast.success(data.message ?? 'RC registration rejected.')
+      setPendingRcs((prev) => prev.filter((item) => item._id !== rcId))
+      fetchUsers()
+    } catch {
+      toast.error('Unable to reach server. Please try again.')
+    }
+  }
+
 
   const fetchMessages = async () => {
     try {
@@ -215,20 +302,28 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? `Failed to ${decision} pass request.`)
+        toast.error(data.message ?? `Failed to ${decision} pass request.`)
         return
       }
 
+      toast.success(data.message ?? `Pass ${decision}d successfully.`)
       fetchAccessModeData()
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     }
   }
 
   useEffect(() => {
     fetchUsers()
+    fetchPendingRcs()
     fetchMessages()
   }, [currentUser?.email])
+
+  useEffect(() => {
+    if (activeView === 'pending-rcs') {
+      fetchPendingRcs()
+    }
+  }, [activeView])
 
   useEffect(() => {
     if (activeView !== 'analytics') {
@@ -265,12 +360,19 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
       }
     })
 
+    socket.on('rc:pending_new', (incomingRc) => {
+      setPendingRcs((prev) => [incomingRc, ...prev.filter((r) => r._id !== incomingRc._id)])
+      toast.info(`New RC registration submitted: ${incomingRc.username}`)
+    })
+
     return () => {
       socket.emit('admin:leave', { adminEmail })
       socket.off('message:new')
+      socket.off('rc:pending_new')
       socket.disconnect()
     }
   }, [currentUser?.email])
+
 
   useEffect(() => {
     try {
@@ -432,17 +534,20 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Failed to update user status.')
+        toast.error(data.message ?? 'Failed to update user status.')
         return
       }
+
+      toast.success(data.message ?? 'User status updated successfully.')
 
       setUsers((currentUsers) =>
         currentUsers.map((user) => (user._id === userId ? { ...user, ...data.user } : user))
       )
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
     }
   }
+
 
   const sendChatQuestion = async (questionText) => {
     const normalizedQuestion = questionText?.toString().trim() ?? ''
@@ -677,7 +782,103 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
               <p className="admin-summary-value">{rcCount}</p>
             </div>
           </article>
+
+          <article
+            className={`admin-summary-card dashboard-card hover-lift admin-summary-card-clickable ${
+              isPendingRcsView ? 'admin-summary-card-active' : ''
+            }`}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleSummaryNavigate('pending-rcs')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                handleSummaryNavigate('pending-rcs')
+              }
+            }}
+            aria-label="Open pending RC registrations"
+          >
+            <span className="admin-summary-icon" aria-hidden="true">
+              ⏳
+            </span>
+            <div>
+              <p className="admin-summary-label">Pending RCs</p>
+              <p className="admin-summary-value">{pendingRcs.length}</p>
+            </div>
+          </article>
         </section>
+
+        {isPendingRcsView && (
+          <section className="admin-access-wrap" aria-label="Pending RC registrations">
+            <div className="admin-users-header">
+              <div className="admin-users-title-block">
+                <h2>Pending RC Registrations</h2>
+                <p className="admin-users-subtitle">Review and approve or reject new Residential Commissioner account requests.</p>
+              </div>
+
+              <div className="admin-users-actions">
+                <span className="admin-users-count-pill">{pendingRcs.length} pending</span>
+                <button type="button" className="admin-refresh-button btn btn-outline hover-lift" onClick={fetchPendingRcs}>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {isPendingLoading && <p className="admin-empty-text">Loading pending registrations...</p>}
+            {!isPendingLoading && pendingErrorMessage && <p className="admin-error-text">{pendingErrorMessage}</p>}
+            {!isPendingLoading && !pendingErrorMessage && pendingRcs.length === 0 && (
+              <p className="admin-empty-text">No pending RC registrations to review.</p>
+            )}
+
+            {!isPendingLoading && !pendingErrorMessage && pendingRcs.length > 0 && (
+              <div className="bg-white rounded-xl shadow-md border p-5 mt-6 overflow-x-auto w-full">
+                <table className="w-full text-sm border-collapse admin-user-table">
+                  <thead>
+                    <tr>
+                      <th className="text-left text-gray-600 border-b pb-2">Username</th>
+                      <th className="text-left text-gray-600 border-b pb-2">Email</th>
+                      <th className="text-left text-gray-600 border-b pb-2">Phone Number</th>
+                      <th className="text-left text-gray-600 border-b pb-2">Registration Date</th>
+                      <th className="text-left text-gray-600 border-b pb-2">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingRcs.map((rc) => (
+                      <tr key={rc._id} className="admin-user-row hover:bg-gray-50 transition">
+                        <td>{rc.username}</td>
+                        <td>{rc.email}</td>
+                        <td>{rc.mobileNo || '-'}</td>
+                        <td>{rc.createdAt ? new Date(rc.createdAt).toLocaleString() : '-'}</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              className="btn btn-outline hover-lift bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md text-sm"
+                              onClick={() => handleApproveRc(rc._id)}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline hover-lift bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+                              onClick={() => handleRejectRc(rc._id)}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {isHostelView && (
+          <HostelAllocationAdmin />
+        )}
 
         {isInboxView && (
           <section className="admin-access-wrap" aria-label="Admin inbox">

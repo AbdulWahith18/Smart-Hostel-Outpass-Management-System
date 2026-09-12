@@ -43,6 +43,14 @@ const buildAuthErrorResponse = (error, fallbackMessage) => {
     }
   }
 
+  if (error?.code === 11000) {
+    return {
+      statusCode: 409,
+      message: 'An account with this email already exists.',
+      error: error.message,
+    }
+  }
+
   return {
     statusCode: 500,
     message: fallbackMessage,
@@ -58,7 +66,9 @@ const buildToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
+      _id: user._id,
       userType: user.userType,
+      username: user.username,
       email: user.email,
     },
     process.env.JWT_SECRET,
@@ -107,25 +117,29 @@ export const registerUser = async (req, res) => {
     }
 
     if (normalizedUserType === 'Student') {
-      const existingRc = await User.findOne({ userType: 'RC', username: normalizedAuthorizedRc })
+      const existingRc = await User.findOne({ userType: 'RC', username: normalizedAuthorizedRc, status: 'active' })
 
       if (!existingRc) {
-        return res.status(400).json({ message: 'Selected authorized RC does not exist.' })
+        return res.status(400).json({ message: 'Selected authorized RC does not exist or is not active.' })
       }
     }
 
-    const duplicateUser = await User.findOne({
-      userType: normalizedUserType,
-      email: normalizedEmail,
-    })
+    const existingUserWithEmail = await User.findOne({ email: normalizedEmail })
 
-    if (duplicateUser) {
-      return res.status(409).json({
-        message: 'An account with this email already exists for the selected user type.',
-      })
+    if (existingUserWithEmail) {
+      if (existingUserWithEmail.userType === 'RC' && existingUserWithEmail.status === 'pending') {
+        return res.status(409).json({ message: 'An RC registration using this email is already pending admin approval.' })
+      }
+
+      if (existingUserWithEmail.userType === 'RC' && existingUserWithEmail.status === 'rejected') {
+        return res.status(409).json({ message: 'An RC registration using this email has been rejected by the administrator.' })
+      }
+
+      return res.status(409).json({ message: 'An account with this email already exists.' })
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const initialStatus = normalizedUserType === 'RC' ? 'pending' : 'active'
 
     const user = await User.create({
       userType: normalizedUserType,
@@ -134,15 +148,36 @@ export const registerUser = async (req, res) => {
       mobileNo: normalizedMobile,
       password: hashedPassword,
       authorizedRc: normalizedUserType === 'Student' ? normalizedAuthorizedRc : '',
+      status: initialStatus,
     })
+
+    if (normalizedUserType === 'RC') {
+      const io = req.app.get('io')
+      if (io) {
+        io.to('admin:all').emit('rc:pending_new', user)
+      }
+      return res.status(201).json({
+        message: 'Registration submitted successfully! Your RC account is pending admin approval.',
+        status: 'pending',
+        user: {
+          id: user._id,
+          userType: user.userType,
+          username: user.username,
+          email: user.email,
+          status: user.status,
+        },
+      })
+    }
 
     return res.status(201).json({
       message: 'Account created successfully.',
+      status: 'active',
       user: {
         id: user._id,
         userType: user.userType,
         username: user.username,
         email: user.email,
+        status: user.status,
       },
     })
   } catch (error) {
@@ -166,6 +201,14 @@ export const loginUser = async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid login details.' })
+    }
+
+    if (user.status === 'pending') {
+      return res.status(403).json({ message: 'Your RC registration is pending admin approval.' })
+    }
+
+    if (user.status === 'rejected') {
+      return res.status(403).json({ message: 'Your RC registration has been rejected by the administrator.' })
     }
 
     if (user.status === 'inactive') {
@@ -205,13 +248,14 @@ export const loginUser = async (req, res) => {
 
 export const listRcUsers = async (_req, res) => {
   try {
-    const rcUsers = await User.find({ userType: 'RC' }).select('username -_id').sort({ username: 1 })
+    const rcUsers = await User.find({ userType: 'RC', status: 'active' }).select('username -_id').sort({ username: 1 })
     return res.status(200).json({ rcUsers: rcUsers.map((user) => user.username) })
   } catch (error) {
     const authError = buildAuthErrorResponse(error, 'Failed to fetch RC users.')
     return res.status(authError.statusCode).json({ message: authError.message, error: authError.error })
   }
 }
+
 
 export const resetPassword = async (req, res) => {
   try {

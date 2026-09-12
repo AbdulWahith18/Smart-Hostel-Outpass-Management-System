@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'inactive'],
+      enum: ['active', 'inactive', 'pending', 'rejected'],
       default: 'active',
     },
     lastLogin: {
@@ -72,8 +72,9 @@ const userSchema = new mongoose.Schema(
   }
 )
 
-userSchema.index({ userType: 1, email: 1 }, { unique: true })
+userSchema.index({ email: 1 }, { unique: true })
 
 const User = mongoose.model('User', userSchema)
 
 export default User
+

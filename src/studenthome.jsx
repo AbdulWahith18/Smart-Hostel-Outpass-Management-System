@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { io } from 'socket.io-client'
 import './studenthome.css'
 import { getAuthToken } from './utils/authToken'
+import { useToast } from './components/Toast'
+import HostelAllocationStudent from './components/HostelAllocationStudent'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -28,13 +30,16 @@ const combineDateAndTime = (dateValue, timeValue) => {
 }
 
 function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
+  const toast = useToast()
   const [appliedPasses, setAppliedPasses] = useState([])
   const [passFetchError, setPassFetchError] = useState('')
   const [reason, setReason] = useState('')
   const [aiResult, setAiResult] = useState('')
   const [aiError, setAiError] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isSubmittingPass, setIsSubmittingPass] = useState(false)
   const [chatboxMessages, setChatboxMessages] = useState([])
+
   const [messageContent, setMessageContent] = useState('')
   const [chatboxMessageContent, setChatboxMessageContent] = useState('')
   const [messageError, setMessageError] = useState('')
@@ -361,8 +366,10 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (isSubmittingPass) return
 
-    const formData = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const formData = new FormData(formElement)
     const leaveDateTime = combineDateAndTime(formData.get('leaveDate'), formData.get('leaveTime'))
     const returnDateTime = combineDateAndTime(formData.get('returnDate'), formData.get('returnTime'))
     const appliedOn = combineDateAndTime(formData.get('appliedOnDate'), formData.get('appliedOnTime'))
@@ -388,6 +395,8 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
       approvedAt: '',
     }
 
+    setIsSubmittingPass(true)
+
     try {
       const response = await fetch('/api/pass-requests', {
         method: 'POST',
@@ -400,12 +409,12 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Failed to submit pass application.')
+        toast.error(data.message ?? 'Failed to submit pass application.')
         return
       }
 
-      alert('Pass application submitted successfully!')
-      event.currentTarget.reset()
+      toast.success('Pass application submitted successfully!')
+      formElement.reset()
       setReason('')
       setAiResult('')
       setAiError('')
@@ -414,12 +423,16 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
         onViewChange('pending')
       }
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
+    } finally {
+      setIsSubmittingPass(false)
     }
   }
 
+
   const isQueryView = activeView === 'queries'
   const isChatboxView = activeView === 'chatbox'
+  const isHostelView = activeView === 'hostel'
   const groupMessages = useMemo(() => sortMessagesChronologically(chatboxMessages), [chatboxMessages])
   const announcementList = useMemo(() => sortMessagesChronologically(announcementMessages.filter((message) => message.isBroadcast)), [announcementMessages])
 
@@ -576,7 +589,13 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
           </section>
         )}
 
-        {!isQueryView && !isChatboxView && (
+        {isHostelView && (
+          <div className="applied-pass-section">
+            <HostelAllocationStudent currentUser={currentUser} />
+          </div>
+        )}
+
+        {!isQueryView && !isChatboxView && !isHostelView && (
           <div className="applied-pass-section">
             <div className="student-pass-content">
               {activeView === 'apply' ? (
@@ -737,9 +756,10 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
                       required
                     />
 
-                    <button className="student-apply-button btn btn-primary hover-lift" type="submit">
-                      Apply Now
+                    <button className="student-apply-button btn btn-primary hover-lift" type="submit" disabled={isSubmittingPass}>
+                      {isSubmittingPass ? 'Submitting...' : 'Apply Now'}
                     </button>
+
                   </form>
                 </>
               ) : (

@@ -442,3 +442,79 @@ const applyAdminPassDecision = async (req, res, nextStatus) => {
 export const approvePassRequestInAccessMode = async (req, res) => applyAdminPassDecision(req, res, 'approved')
 
 export const rejectPassRequestInAccessMode = async (req, res) => applyAdminPassDecision(req, res, 'rejected')
+
+export const getPendingRcRegistrations = async (_req, res) => {
+  try {
+    const pendingRcs = await User.find({ userType: 'RC', status: 'pending' })
+      .select('username email userType mobileNo status createdAt')
+      .sort({ createdAt: -1 })
+    return res.status(200).json({ pendingRcs })
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to fetch pending RC registrations.', error: error.message })
+  }
+}
+
+export const approveRcRegistration = async (req, res) => {
+  try {
+    const { id } = req.params
+    const user = await User.findOne({ _id: id, userType: 'RC' })
+
+    if (!user) {
+      return res.status(404).json({ message: 'RC user registration not found.' })
+    }
+
+    user.status = 'active'
+    await user.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to('admin:all').emit('rc:status_updated', user)
+    }
+
+    return res.status(200).json({
+      message: 'RC registration approved successfully.',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        userType: user.userType,
+        status: user.status,
+      },
+    })
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to approve RC registration.', error: error.message })
+  }
+}
+
+export const rejectRcRegistration = async (req, res) => {
+  try {
+    const { id } = req.params
+    const user = await User.findOne({ _id: id, userType: 'RC' })
+
+    if (!user) {
+      return res.status(404).json({ message: 'RC user registration not found.' })
+    }
+
+    user.status = 'rejected'
+    await user.save()
+
+    const io = req.app.get('io')
+    if (io) {
+      io.to('admin:all').emit('rc:status_updated', user)
+    }
+
+    return res.status(200).json({
+      message: 'RC registration rejected.',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        userType: user.userType,
+        status: user.status,
+      },
+    })
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to reject RC registration.', error: error.message })
+  }
+}
+

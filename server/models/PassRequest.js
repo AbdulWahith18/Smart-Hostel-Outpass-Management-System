@@ -114,6 +114,9 @@ const passRequestSchema = new mongoose.Schema(
   }
 )
 
+passRequestSchema.index({ studentEmail: 1, leaveDateTime: 1, returnDateTime: 1 }, { unique: true })
+
 const PassRequest = mongoose.model('PassRequest', passRequestSchema)
 
 export default PassRequest
+

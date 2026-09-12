@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './register.css'
+import { useToast } from './components/Toast'
 
 const defaultDraftValues = {
   userType: '',
@@ -14,6 +15,8 @@ const defaultDraftValues = {
 
 function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues, onDraftChange }) {
   const [registeredRcs, setRegisteredRcs] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const toast = useToast()
 
   const updateDraft = (fieldName, fieldValue) => {
     onDraftChange?.((currentDraft) => ({ ...currentDraft, [fieldName]: fieldValue }))
@@ -39,6 +42,8 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (isSubmitting) return
+
     const selectedUserType = draftValues.userType
     const username = draftValues.username.trim()
     const authorizedRc = draftValues.authorizedRc.trim()
@@ -52,38 +57,40 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,12}$/.test(password)
 
     if (!isMobileValid) {
-      alert('Mobile number must be exactly 10 digits.')
+      toast.warning('Mobile number must be exactly 10 digits.')
       return
     }
 
     if (!isPasswordValid) {
-      alert(
+      toast.warning(
         'Password must be 8-12 characters and include uppercase, lowercase, a number, and a special character.'
       )
       return
     }
 
     if (password !== confirmPassword) {
-      alert('Password and re-entered password must match.')
+      toast.warning('Password and re-entered password must match.')
       return
     }
 
     if (!draftValues.termsAccepted) {
-      alert('Please accept Terms and Policy before registering.')
+      toast.warning('Please accept Terms and Policy before registering.')
       return
     }
 
     if (selectedUserType === 'Student') {
       if (registeredRcs.length === 0) {
-        alert('No RC is registered yet. Please register an RC account first.')
+        toast.warning('No active RC is available yet. Please contact hostel administration.')
         return
       }
 
       if (!authorizedRc) {
-        alert('Please select which RC you are authorized to.')
+        toast.warning('Please select which RC you are authorized to.')
         return
       }
     }
+
+    setIsSubmitting(true)
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -104,21 +111,22 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
       const data = await response.json()
 
       if (!response.ok) {
-        alert(data.message ?? 'Failed to create account.')
+        toast.error(data.message ?? 'Failed to create account.')
         return
       }
 
       if (selectedUserType === 'RC') {
-        setRegisteredRcs((currentRcs) =>
-          currentRcs.includes(username) ? currentRcs : [...currentRcs, username]
-        )
+        toast.success(data.message ?? 'Registration submitted successfully! Your RC account is pending admin approval.')
+      } else {
+        toast.success(data.message ?? 'Account created successfully!')
       }
 
-      alert('Account created successfully!')
       onDraftChange?.({ ...defaultDraftValues })
       onBackToLogin?.()
     } catch {
-      alert('Unable to reach server. Please try again.')
+      toast.error('Unable to reach server. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -257,7 +265,9 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
             </span>
           </label>
 
-          <button type="submit" className="btn btn-primary hover-lift" disabled={!draftValues.termsAccepted}>Create Account</button>
+          <button type="submit" className="btn btn-primary hover-lift" disabled={!draftValues.termsAccepted || isSubmitting}>
+            {isSubmitting ? 'Registering...' : 'Create Account'}
+          </button>
 
           {onBackToLogin && (
             <p className="switch-text">
@@ -274,3 +284,4 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
 }
 
 export default Register
+
