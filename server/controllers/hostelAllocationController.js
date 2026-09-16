@@ -2,6 +2,12 @@ import HostelAllocation from '../models/HostelAllocation.js'
 import HostelRoom from '../models/HostelRoom.js'
 import HostelBooking from '../models/HostelBooking.js'
 import User from '../models/User.js'
+import {
+  closeAllocationTransaction,
+  generateAllocationReportSnapshot,
+  buildAllocationPDFStream,
+  formatIST,
+} from '../services/hostelAllocationService.js'
 
 /**
  * Generate room objects for given block configurations.
@@ -113,10 +119,21 @@ const validateBlockConfigs = (blocks) => {
  */
 export const previewAllocation = async (req, res) => {
   try {
-    const { name, academicYear, blocks } = req.body
+    const { name, academicYear, startTime, endTime, blocks } = req.body
 
-    if (!name || !academicYear) {
-      return res.status(400).json({ message: 'Allocation name and academic year are required.' })
+    if (!name || !academicYear || !startTime || !endTime) {
+      return res.status(400).json({ message: 'Allocation name, academic year, start time, and end time are required.' })
+    }
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid start date/time or end date/time.' })
+    }
+
+    if (end <= start) {
+      return res.status(400).json({ message: 'End time must be later than start time.' })
     }
 
     validateBlockConfigs(blocks)
@@ -163,6 +180,8 @@ export const previewAllocation = async (req, res) => {
     res.status(200).json({
       name,
       academicYear,
+      startTimeIST: formatIST(start),
+      endTimeIST: formatIST(end),
       summary: {
         totalBlocks,
         totalRooms,
@@ -178,14 +197,25 @@ export const previewAllocation = async (req, res) => {
 }
 
 /**
- * Create a new hostel allocation in DRAFT or PUBLISHED status.
+ * Create a new hostel allocation with start and end times.
  */
 export const createAllocation = async (req, res) => {
   try {
-    const { name, academicYear, blocks, autoPublish } = req.body
+    const { name, academicYear, startTime, endTime, blocks, autoPublish } = req.body
 
-    if (!name || !academicYear) {
-      return res.status(400).json({ message: 'Allocation name and academic year are required.' })
+    if (!name || !academicYear || !startTime || !endTime) {
+      return res.status(400).json({ message: 'Allocation name, academic year, start time, and end time are required.' })
+    }
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return res.status(400).json({ message: 'Invalid start date/time or end date/time.' })
+    }
+
+    if (end <= start) {
+      return res.status(400).json({ message: 'End time must be later than start time.' })
     }
 
     validateBlockConfigs(blocks)
@@ -234,6 +264,8 @@ export const createAllocation = async (req, res) => {
     const allocation = await HostelAllocation.create({
       name,
       academicYear,
+      startTime: start,
+      endTime: end,
       status: allocationStatus,
       blocks: processedBlocks,
       totalBlocks,
@@ -244,7 +276,7 @@ export const createAllocation = async (req, res) => {
       createdBy: req.user.username || req.user.email,
     })
 
-    // Generate and bulk insert room documents
+    // Bulk insert room documents
     const roomDocs = generateRoomObjects(allocation._id, processedBlocks)
     await HostelRoom.insertMany(roomDocs)
 
@@ -303,6 +335,10 @@ export const publishAllocation = async (req, res) => {
       return res.status(400).json({ message: 'Closed allocations cannot be republished.' })
     }
 
+    if (new Date() >= new Date(allocation.endTime)) {
+      return res.status(400).json({ message: 'Allocation end time has already passed. Please update the scheduled end time first.' })
+    }
+
     // Check if another published allocation exists
     const activePublished = await HostelAllocation.findOne({ status: 'published', _id: { $ne: allocation._id } })
     if (activePublished) {
@@ -327,29 +363,24 @@ export const publishAllocation = async (req, res) => {
 }
 
 /**
- * Close an allocation.
+ * Admin Force Close an Allocation.
  */
 export const closeAllocation = async (req, res) => {
   try {
-    const allocation = await HostelAllocation.findById(req.params.id)
-    if (!allocation) {
-      return res.status(404).json({ message: 'Hostel allocation not found.' })
+    const { id } = req.params
+    const adminUsername = req.user.username || req.user.email || 'Admin'
+
+    const updatedAllocation = await closeAllocationTransaction(id, 'ADMIN_FORCED', adminUsername, req.app.get('io'))
+
+    if (!updatedAllocation) {
+      return res.status(400).json({ message: 'Allocation is already closed or not in active state.' })
     }
 
-    if (allocation.status === 'closed') {
-      return res.status(400).json({ message: 'Allocation is already closed.' })
-    }
-
-    allocation.status = 'closed'
-    allocation.closedAt = new Date()
-    await allocation.save()
-
-    const io = req.app.get('io')
-    if (io) {
-      io.emit('hostel:allocation_closed', { allocationId: allocation._id, name: allocation.name })
-    }
-
-    res.status(200).json({ message: `Hostel allocation '${allocation.name}' is now CLOSED.`, allocation })
+    res.status(200).json({
+      message: `Hostel allocation '${updatedAllocation.name}' has been ENDED. Final report generated.`,
+      allocation: updatedAllocation,
+      reportSnapshot: updatedAllocation.reportSnapshot,
+    })
   } catch (err) {
     res.status(500).json({ message: 'Failed to close allocation.', error: err.message })
   }
@@ -375,6 +406,116 @@ export const deleteAllocation = async (req, res) => {
     res.status(200).json({ message: 'Draft allocation deleted successfully.' })
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete allocation.', error: err.message })
+  }
+}
+
+/**
+ * Get report snapshot JSON data for Admin UI.
+ */
+export const getAllocationReport = async (req, res) => {
+  try {
+    const { id } = req.params
+    const allocation = await HostelAllocation.findById(id)
+    if (!allocation) {
+      return res.status(404).json({ message: 'Hostel allocation not found.' })
+    }
+
+    let snapshot = allocation.reportSnapshot
+    if (!snapshot) {
+      snapshot = await generateAllocationReportSnapshot(id)
+    }
+
+    res.status(200).json({ reportSnapshot: snapshot })
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch report data.', error: err.message })
+  }
+}
+
+/**
+ * Download PDF Allocation Report.
+ */
+export const downloadAllocationPDF = async (req, res) => {
+  try {
+    const { id } = req.params
+    await buildAllocationPDFStream(id, res)
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to generate PDF report.', error: err.message })
+  }
+}
+
+/**
+ * Export CSV Allocation Data.
+ */
+export const downloadAllocationCSV = async (req, res) => {
+  try {
+    const { id } = req.params
+    const allocation = await HostelAllocation.findById(id)
+    if (!allocation) {
+      return res.status(404).json({ message: 'Hostel allocation not found.' })
+    }
+
+    let snapshot = allocation.reportSnapshot
+    if (!snapshot) {
+      snapshot = await generateAllocationReportSnapshot(id)
+    }
+
+    const csvLines = []
+    csvLines.push(`HOSTEL OUTPASS MANAGEMENT SYSTEM - HOSTEL ROOM ALLOCATION REPORT`)
+    csvLines.push(`Academic Year,${snapshot.allocationHeader.academicYear}`)
+    csvLines.push(`Allocation Name,"${snapshot.allocationHeader.name}"`)
+    csvLines.push(`Period,"${snapshot.allocationHeader.startTimeIST} to ${snapshot.allocationHeader.endTimeIST}"`)
+    csvLines.push(`Status,${snapshot.allocationHeader.status}`)
+    csvLines.push(`Closure Type,${snapshot.allocationHeader.closureType}`)
+    csvLines.push(`Closed At,${snapshot.allocationHeader.closedAtIST}`)
+    csvLines.push(`Closed By,${snapshot.allocationHeader.closedBy}`)
+    csvLines.push(``)
+
+    csvLines.push(`SUMMARY METRICS`)
+    csvLines.push(`Total Blocks,${snapshot.summary.totalBlocks}`)
+    csvLines.push(`Total Student Rooms,${snapshot.summary.totalStudentRooms}`)
+    csvLines.push(`Total Student Capacity,${snapshot.summary.totalStudentCapacity}`)
+    csvLines.push(`Occupied Slots,${snapshot.summary.occupiedSlots}`)
+    csvLines.push(`Available Slots,${snapshot.summary.availableSlots}`)
+    csvLines.push(`Occupancy Rate,${snapshot.summary.occupancyPercentage}`)
+    csvLines.push(``)
+
+    csvLines.push(`DETAILED ALLOCATION TABLE`)
+    csvLines.push(`Block,Floor,Room Number,Room Capacity,Room Status,Slot Code,Seat Status,Student Name,Register No,Department,Year,Booking Time (IST)`)
+
+    snapshot.blocks.forEach((block) => {
+      block.floors.forEach((floor) => {
+        floor.rooms.forEach((room) => {
+          room.slots.forEach((s) => {
+            csvLines.push(
+              `"${block.blockName}","${floor.floorName}","${room.roomNumber}",${room.capacity},"${room.status}","${s.slotCode}","${
+                s.isBooked ? 'BOOKED' : 'AVAILABLE'
+              }","${s.studentName}","${s.registerNo}","${s.department}","${s.year}","${s.bookedAtIST}"`
+            )
+          })
+        })
+      })
+    })
+
+    const csvContent = csvLines.join('\n')
+
+    res.setHeader('Content-Type', 'text/csv')
+    res.setHeader('Content-Disposition', `attachment; filename="HOMS_Allocation_Report_${allocation.academicYear}.csv"`)
+    res.status(200).send(csvContent)
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to export CSV.', error: err.message })
+  }
+}
+
+/**
+ * Retry/Regenerate Report Snapshot.
+ */
+export const regenerateReport = async (req, res) => {
+  try {
+    const { id } = req.params
+    const snapshot = await generateAllocationReportSnapshot(id)
+    res.status(200).json({ message: 'Report snapshot generated successfully.', reportSnapshot: snapshot })
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to regenerate report.', error: err.message })
   }
 }
 
@@ -491,6 +632,13 @@ export const getActiveAllocation = async (req, res) => {
       return res.status(200).json({ allocation: null, message: 'No hostel allocation is currently active.' })
     }
 
+    // Check if current server time has passed scheduled end time
+    if (new Date() >= new Date(activeAllocation.endTime)) {
+      // Reconcile closure asynchronously
+      closeAllocationTransaction(activeAllocation._id, 'AUTOMATIC', 'SYSTEM Scheduler', req.app.get('io'))
+      return res.status(200).json({ allocation: null, message: 'Hostel allocation has ended.' })
+    }
+
     res.status(200).json({ allocation: activeAllocation })
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch active allocation.', error: err.message })
@@ -511,7 +659,7 @@ export const getMyBooking = async (req, res) => {
     const studentId = userDoc._id
 
     const booking = await HostelBooking.findOne({ studentId, status: 'active' })
-      .populate('allocationId', 'name academicYear status')
+      .populate('allocationId', 'name academicYear status startTime endTime closedAt closureType')
       .populate('roomId', 'roomNumber blockNumber floorNumber isRcRoom')
 
     if (!booking) {
@@ -577,7 +725,7 @@ export const getRoomById = async (req, res) => {
 }
 
 /**
- * Book a slot (Atomic & Concurrency-Safe).
+ * Book a slot (Atomic & Concurrency-Safe with Strict Lifecycle Expiration Guard).
  */
 export const bookSlot = async (req, res) => {
   try {
@@ -605,14 +753,18 @@ export const bookSlot = async (req, res) => {
 
     const slotNum = Number(slotNumber)
 
-    // 1. Verify Allocation is PUBLISHED
+    // 1. VERIFY ALLOCATION IS PUBLISHED AND NOT EXPIRED / CLOSED
     const allocation = await HostelAllocation.findById(id)
     if (!allocation) {
       return res.status(404).json({ message: 'Hostel allocation not found.' })
     }
 
-    if (allocation.status !== 'published') {
-      return res.status(400).json({ message: 'Hostel allocation is not currently open for booking.' })
+    if (allocation.status !== 'published' || allocation.closedAt || new Date() >= new Date(allocation.endTime)) {
+      // Reconcile closure if expired
+      if (allocation.status === 'published' && new Date() >= new Date(allocation.endTime)) {
+        closeAllocationTransaction(allocation._id, 'AUTOMATIC', 'SYSTEM Scheduler', req.app.get('io'))
+      }
+      return res.status(409).json({ message: 'Hostel allocation has ended. New bookings are no longer accepted.' })
     }
 
     // 2. Check if student ALREADY has an active booking in this allocation
@@ -638,7 +790,6 @@ export const bookSlot = async (req, res) => {
     }
 
     // 4. ATOMIC CONCURRENCY BOOKING UPDATE ON MONGOOSE
-    // Atomically find the room with the specific unbooked slot and update it
     const updatedRoom = await HostelRoom.findOneAndUpdate(
       {
         _id: roomId,
@@ -677,7 +828,7 @@ export const bookSlot = async (req, res) => {
 
     const slotCode = `${targetRoom.roomNumber}-${String.fromCharCode(64 + slotNum)}`
 
-    // 5. Create Booking Document (guarded by compound unique index)
+    // 5. Create Booking Document
     try {
       const booking = await HostelBooking.create({
         allocationId: id,
@@ -703,7 +854,7 @@ export const bookSlot = async (req, res) => {
         { new: true }
       )
 
-      // Emitting Real-Time Socket.IO Event to subscribers
+      // Emit Socket.IO event
       const io = req.app.get('io')
       if (io) {
         io.emit('hostel:slot_booked', {
@@ -724,7 +875,7 @@ export const bookSlot = async (req, res) => {
         booking,
       })
     } catch (createErr) {
-      // Revert slot reservation if booking creation failed due to duplicate student index
+      // Revert slot reservation if booking creation failed
       await HostelRoom.updateOne(
         { _id: roomId, 'slots.slotNumber': slotNum },
         {

@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { getAuthToken } from '../utils/authToken'
 import { useToast } from './Toast'
 import { io } from 'socket.io-client'
-import { FaBuilding, FaBed, FaCheckCircle, FaUser, FaIdCard, FaGraduationCap, FaShieldAlt, FaTimes } from 'react-icons/fa'
+import { FaBuilding, FaBed, FaCheckCircle, FaUser, FaClock, FaTimes, FaLock } from 'react-icons/fa'
 
 export default function HostelAllocationStudent({ currentUser }) {
   const toast = useToast()
   const [activeAllocation, setActiveAllocation] = useState(null)
   const [myBooking, setMyBooking] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [nowTime, setNowTime] = useState(Date.now())
 
   // Selection states
   const [selectedBlockNumber, setSelectedBlockNumber] = useState(null)
@@ -24,6 +25,39 @@ export default function HostelAllocationStudent({ currentUser }) {
   const [department, setDepartment] = useState('CSE')
   const [year, setYear] = useState('3rd Year')
   const [isBooking, setIsBooking] = useState(false)
+
+  // Live countdown ticker
+  useEffect(() => {
+    const timer = setInterval(() => setNowTime(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formatIST = (dateVal) => {
+    if (!dateVal) return '-'
+    const d = new Date(dateVal)
+    if (Number.isNaN(d.getTime())) return '-'
+    return d.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  const getTimeRemaining = (endTimeStr) => {
+    if (!endTimeStr) return null
+    const end = new Date(endTimeStr).getTime()
+    const diff = end - nowTime
+    if (diff <= 0) return 'Ended / Expired'
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const secs = Math.floor((diff % (1000 * 60)) / 1000)
+    return `${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+  }
 
   const fetchActiveAllocationAndBooking = async () => {
     setIsLoading(true)
@@ -92,26 +126,32 @@ export default function HostelAllocationStudent({ currentUser }) {
 
   // REAL-TIME SOCKET.IO LISTENER
   useEffect(() => {
-    if (!activeAllocation?._id) return
-
     const socket = io('/', { transports: ['websocket', 'polling'] })
 
     socket.on('hostel:slot_booked', (eventData) => {
-      if (eventData.allocationId === activeAllocation._id) {
-        // Refresh room grid if current student is looking at affected block/floor
+      if (activeAllocation?._id && eventData.allocationId === activeAllocation._id) {
         if (eventData.blockNumber === selectedBlockNumber && eventData.floorNumber === selectedFloorNumber) {
           fetchRoomsForFloor(activeAllocation._id, selectedBlockNumber, selectedFloorNumber)
         }
 
-        // If current student has open room modal for affected room, update its slots live!
         if (selectedRoom && selectedRoom._id === eventData.roomId) {
           fetchRoomDetails(selectedRoom._id)
         }
       }
     })
 
+    socket.on('hostel:allocation_closed', (eventData) => {
+      if (activeAllocation?._id && eventData.allocationId === activeAllocation._id) {
+        toast.warning('Hostel allocation has ended. New bookings are no longer available.')
+        setSelectedRoom(null)
+        setShowConfirmModal(false)
+        setActiveAllocation((prev) => (prev ? { ...prev, status: 'closed', closedAt: eventData.closedAt } : null))
+      }
+    })
+
     return () => {
       socket.off('hostel:slot_booked')
+      socket.off('hostel:allocation_closed')
       socket.disconnect()
     }
   }, [activeAllocation?._id, selectedBlockNumber, selectedFloorNumber, selectedRoom?._id])
@@ -132,6 +172,11 @@ export default function HostelAllocationStudent({ currentUser }) {
   }
 
   const handleSelectRoom = async (roomSummary) => {
+    if (isAllocationEnded) {
+      toast.error('Hostel allocation has ended. New bookings are no longer available.')
+      return
+    }
+
     if (roomSummary.isRcRoom) {
       toast.info('RC / Warden rooms are reserved and cannot be booked by students.')
       return
@@ -159,6 +204,12 @@ export default function HostelAllocationStudent({ currentUser }) {
     e.preventDefault()
     if (!selectedRoom || !selectedSlotNumber) return
 
+    if (isAllocationEnded) {
+      toast.error('Hostel allocation has ended. New bookings are no longer available.')
+      setShowConfirmModal(false)
+      return
+    }
+
     setIsBooking(true)
     try {
       const token = getAuthToken()
@@ -180,8 +231,13 @@ export default function HostelAllocationStudent({ currentUser }) {
       const data = await response.json()
       if (!response.ok) {
         toast.error(data.message || 'Booking failed.')
-        // Refresh room details if concurrency error occurred
-        fetchRoomDetails(selectedRoom._id)
+        if (response.status === 409 || response.status === 403) {
+          setShowConfirmModal(false)
+          setSelectedRoom(null)
+          fetchActiveAllocationAndBooking()
+        } else {
+          fetchRoomDetails(selectedRoom._id)
+        }
         return
       }
 
@@ -200,10 +256,17 @@ export default function HostelAllocationStudent({ currentUser }) {
     return <p className="admin-empty-text">Loading hostel allocation data...</p>
   }
 
-  // CASE 1: STUDENT HAS AN ACTIVE CONFIRMED BOOKING
-  if (myBooking) {
-    return (
-      <section className="admin-access-wrap max-w-3xl mx-auto" aria-label="My Hostel Allocation">
+  const isAllocationEnded =
+    !activeAllocation ||
+    activeAllocation.status === 'closed' ||
+    (activeAllocation.endTime && new Date(activeAllocation.endTime).getTime() <= nowTime)
+
+  const countdownText = activeAllocation ? getTimeRemaining(activeAllocation.endTime) : null
+
+  return (
+    <section className="admin-access-wrap max-w-6xl mx-auto space-y-8" aria-label="Hostel Room Booking">
+      {/* CASE 1: CONFIRMED BOOKING CARD (ALWAYS VISIBLE IF STUDENT HAS BOOKED) */}
+      {myBooking && (
         <div className="saas-card hover-lift p-8 rounded-2xl border-2 border-teal-500 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b pb-4 mb-6">
             <div>
@@ -246,305 +309,326 @@ export default function HostelAllocationStudent({ currentUser }) {
             Booking Record Reference: {myBooking._id} • Confirmed on {new Date(myBooking.createdAt).toLocaleString()}
           </div>
         </div>
-      </section>
-    )
-  }
-
-  // CASE 2: NO PUBLISHED ALLOCATION AVAILABLE
-  if (!activeAllocation) {
-    return (
-      <section className="admin-access-wrap text-center py-12" aria-label="No Allocation">
-        <div className="saas-card p-8 rounded-2xl bg-white border max-w-lg mx-auto shadow-sm">
-          <FaBuilding className="text-4xl text-gray-300 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-gray-800 mb-1">No Active Hostel Allocation</h3>
-          <p className="text-sm text-gray-500">Hostel room allocation is currently closed or not yet published by the administrator. Please check back later.</p>
-        </div>
-      </section>
-    )
-  }
-
-  const currentBlockConfig = activeAllocation.blocks.find((b) => b.blockNumber === selectedBlockNumber)
-
-  return (
-    <section className="admin-access-wrap max-w-6xl mx-auto" aria-label="Hostel Room Booking">
-      <div className="admin-users-header mb-6">
-        <div className="admin-users-title-block">
-          <span className="bg-teal-100 text-teal-800 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            {activeAllocation.academicYear} Published Allocation
-          </span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-1">{activeAllocation.name}</h2>
-          <p className="admin-users-subtitle">Select a block, pick your floor, and choose an available room slot visually.</p>
-        </div>
-      </div>
-
-      {/* BLOCK SELECTOR TABS */}
-      <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2">
-        <span className="text-sm font-bold text-gray-700 whitespace-nowrap">Select Block:</span>
-        {activeAllocation.blocks.map((block) => (
-          <button
-            key={block.blockNumber}
-            type="button"
-            className={`btn hover-lift text-sm font-bold px-4 py-2 rounded-xl transition ${
-              selectedBlockNumber === block.blockNumber
-                ? 'bg-teal-700 text-white shadow-md'
-                : 'bg-white text-gray-700 border hover:bg-gray-50'
-            }`}
-            onClick={() => {
-              setSelectedBlockNumber(block.blockNumber)
-              setSelectedFloorNumber(0)
-              setSelectedRoom(null)
-            }}
-          >
-            Block {block.blockNumber}
-          </button>
-        ))}
-      </div>
-
-      {/* FLOOR SELECTOR TABS */}
-      {currentBlockConfig && (
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Floor:</span>
-          {Array.from({ length: currentBlockConfig.floorCount }).map((_, fIdx) => (
-            <button
-              key={fIdx}
-              type="button"
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                selectedFloorNumber === fIdx
-                  ? 'bg-teal-100 text-teal-800 border-2 border-teal-600'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-              onClick={() => {
-                setSelectedFloorNumber(fIdx)
-                setSelectedRoom(null)
-              }}
-            >
-              {fIdx === 0 ? 'Ground Floor' : `Floor ${fIdx}`}
-            </button>
-          ))}
-        </div>
       )}
 
-      {/* LEGEND BAR */}
-      <div className="flex items-center justify-between bg-white p-3 rounded-xl border mb-6 text-xs text-gray-600 shadow-sm flex-wrap gap-2">
-        <span className="font-bold text-gray-800">Room Status Legend:</span>
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Available
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Partially Occupied
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Full
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-purple-600 inline-block" /> RC / Warden Room
-          </span>
-        </div>
-      </div>
-
-      {/* ROOMS GRID */}
-      {isRoomsLoading ? (
-        <p className="admin-empty-text">Loading floor room map...</p>
-      ) : roomsList.length === 0 ? (
-        <p className="admin-empty-text">No rooms configured for this floor.</p>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          {roomsList.map((room) => {
-            const isRc = room.isRcRoom
-            const isFull = room.isFull
-            const isPartial = !isRc && room.occupiedCount > 0 && !isFull
-            const isAvail = !isRc && room.occupiedCount === 0
-
-            return (
-              <div
-                key={room._id}
-                role="button"
-                tabIndex={isRc ? -1 : 0}
-                onClick={() => handleSelectRoom(room)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handleSelectRoom(room)
-                }}
-                className={`saas-card p-4 rounded-xl border text-center transition cursor-pointer hover:shadow-lg ${
-                  isRc
-                    ? 'bg-purple-50 border-purple-300 text-purple-900 cursor-not-allowed'
-                    : isFull
-                    ? 'bg-red-50 border-red-200 text-red-900'
-                    : isPartial
-                    ? 'bg-amber-50 border-amber-300 text-amber-900'
-                    : 'bg-white border-teal-200 hover:border-teal-500'
-                }`}
-              >
-                <div className="text-xs font-bold uppercase tracking-wider mb-1">
-                  {isRc ? 'Warden Room' : `Room`}
-                </div>
-                <div className="text-lg font-black font-mono mb-2">
-                  {room.roomNumber}
-                </div>
-                {isRc ? (
-                  <span className="text-[11px] font-bold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full inline-block">
-                    RC Room
-                  </span>
-                ) : (
-                  <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block ${
-                      isFull
-                        ? 'bg-red-200 text-red-800'
-                        : isPartial
-                        ? 'bg-amber-200 text-amber-900'
-                        : 'bg-green-100 text-green-800'
-                    }`}
-                  >
-                    {room.occupiedCount} / {room.capacity} Booked
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* SELECTED ROOM SLOTS VIEW (CINEMA / MOVIE-TICKET STYLE) */}
-      {selectedRoom && (
-        <div className="saas-card p-6 rounded-2xl border-2 border-teal-500 bg-white shadow-xl mb-8">
-          <div className="flex items-center justify-between border-b pb-4 mb-6">
-            <div>
-              <span className="text-xs font-bold text-teal-600 uppercase tracking-wider">Room Seat Selection</span>
-              <h3 className="text-xl font-black text-gray-900 font-mono">ROOM {selectedRoom.roomNumber}</h3>
-              <p className="text-xs text-gray-500">Click an available slot seat to reserve your place.</p>
-            </div>
-
-            <button type="button" className="text-gray-400 hover:text-gray-600" onClick={() => setSelectedRoom(null)}>
-              <FaTimes className="text-lg" />
-            </button>
+      {/* CASE 2: ALLOCATION ENDED OR NOT ACTIVE BANNER */}
+      {isAllocationEnded && (
+        <div className="saas-card p-8 rounded-2xl bg-gray-50 border border-gray-300 text-center max-w-2xl mx-auto shadow-sm">
+          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+            <FaLock />
           </div>
+          <span className="bg-red-100 text-red-800 font-extrabold text-xs px-3 py-1 rounded-full uppercase tracking-wider">
+            HOSTEL ALLOCATION ENDED
+          </span>
+          <h3 className="text-xl font-black text-gray-900 mt-2 mb-1">New Hostel Bookings Are No Longer Available</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            The hostel room allocation period has concluded. Submitting new room reservations or altering existing slot bookings is currently disabled.
+          </p>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-            {selectedRoom.slots.map((slot) => {
-              const isTaken = slot.isBooked
-              const isSelected = selectedSlotNumber === slot.slotNumber
-
-              return (
-                <div
-                  key={slot.slotNumber}
-                  role="button"
-                  tabIndex={isTaken ? -1 : 0}
-                  onClick={() => {
-                    if (isTaken) return
-                    setSelectedSlotNumber(slot.slotNumber)
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isTaken && (e.key === 'Enter' || e.key === ' ')) setSelectedSlotNumber(slot.slotNumber)
-                  }}
-                  className={`p-4 rounded-xl border-2 text-center transition flex flex-col justify-between items-center h-32 ${
-                    isTaken
-                      ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-75'
-                      : isSelected
-                      ? 'bg-teal-600 border-teal-700 text-white shadow-lg scale-105'
-                      : 'bg-white border-teal-300 text-gray-800 hover:bg-teal-50 hover:border-teal-500 cursor-pointer'
-                  }`}
-                >
-                  <span className="text-xs font-bold uppercase">{slot.slotCode}</span>
-                  <FaBed className={`text-2xl ${isSelected ? 'text-white' : isTaken ? 'text-gray-300' : 'text-teal-600'}`} />
-                  <span className={`text-[11px] font-extrabold uppercase px-2 py-0.5 rounded ${
-                    isTaken
-                      ? 'bg-gray-200 text-gray-600'
-                      : isSelected
-                      ? 'bg-white text-teal-800'
-                      : 'bg-teal-100 text-teal-800'
-                  }`}>
-                    {isTaken ? 'OCCUPIED' : isSelected ? 'SELECTED' : 'AVAILABLE'}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {selectedSlotNumber && (
-            <div className="pt-4 border-t flex justify-end">
-              <button
-                type="button"
-                className="btn btn-primary hover-lift text-sm px-6 py-2.5 font-bold"
-                onClick={() => setShowConfirmModal(true)}
-              >
-                Proceed to Book Slot {selectedRoom.roomNumber}-{String.fromCharCode(64 + selectedSlotNumber)}
-              </button>
+          {activeAllocation && (
+            <div className="bg-white p-4 rounded-xl border text-xs text-gray-700 max-w-md mx-auto space-y-1">
+              <p><strong>Allocation Name:</strong> {activeAllocation.name}</p>
+              <p><strong>Scheduled Period:</strong> {formatIST(activeAllocation.startTime)} to {formatIST(activeAllocation.endTime)}</p>
+              <p className="text-red-700 font-bold mt-1">Status: ENDED / CLOSED</p>
             </div>
           )}
         </div>
       )}
 
-      {/* BOOKING CONFIRMATION MODAL */}
-      {showConfirmModal && selectedRoom && selectedSlotNumber && (
-        <div className="forgot-modal-overlay" role="dialog" aria-modal="true">
-          <div className="forgot-card saas-card fade-in max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl border" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-extrabold text-gray-900 mb-2">Confirm Room Booking</h3>
-            <p className="text-xs text-gray-500 mb-4">
-              You are reserving Slot <strong className="text-teal-700 font-mono">{selectedRoom.roomNumber}-{String.fromCharCode(64 + selectedSlotNumber)}</strong> in Block {selectedRoom.blockNumber}.
-            </p>
+      {/* CASE 3: ACTIVE ALLOCATION & BOOKING GRID */}
+      {!isAllocationEnded && activeAllocation && (
+        <div>
+          {/* HEADER & TIME REMAINING COUNTDOWN */}
+          <div className="bg-white p-6 rounded-2xl border border-teal-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <span className="bg-teal-100 text-teal-800 text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                ● ACTIVE ALLOCATION ({activeAllocation.academicYear})
+              </span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-1">{activeAllocation.name}</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                Period: {formatIST(activeAllocation.startTime)} to {formatIST(activeAllocation.endTime)} (IST)
+              </p>
+            </div>
 
-            <form onSubmit={handleConfirmBooking} className="space-y-4 text-sm">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Student Name</label>
-                <input type="text" className="input w-full bg-gray-100" value={currentUser?.username || ''} readOnly />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
-                <input type="text" className="input w-full bg-gray-100" value={currentUser?.email || ''} readOnly />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Register / Mobile Number</label>
-                <input
-                  type="text"
-                  className="input w-full"
-                  value={registerNo}
-                  onChange={(e) => setRegisterNo(e.target.value)}
-                  placeholder="e.g. 2024503001"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Department</label>
-                  <input
-                    type="text"
-                    className="input w-full"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. CSE"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Year</label>
-                  <select className="input w-full" value={year} onChange={(e) => setYear(e.target.value)} required>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t">
-                <button
-                  type="button"
-                  className="btn btn-outline hover-lift"
-                  onClick={() => setShowConfirmModal(false)}
-                  disabled={isBooking}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary hover-lift" disabled={isBooking}>
-                  {isBooking ? 'Confirming...' : 'Confirm & Book Slot'}
-                </button>
-              </div>
-            </form>
+            <div className="bg-teal-50 border border-teal-300 p-3 rounded-xl text-right">
+              <p className="text-xs font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1 justify-end">
+                <FaClock className="text-teal-600" /> Time Remaining
+              </p>
+              <p className="text-2xl font-black font-mono text-teal-900 mt-0.5">{countdownText}</p>
+            </div>
           </div>
+
+          {/* BLOCK SELECTOR TABS */}
+          <div className="flex items-center gap-3 mb-6 overflow-x-auto pb-2">
+            <span className="text-sm font-bold text-gray-700 whitespace-nowrap">Select Block:</span>
+            {activeAllocation.blocks.map((block) => (
+              <button
+                key={block.blockNumber}
+                type="button"
+                className={`btn hover-lift text-sm font-bold px-4 py-2 rounded-xl transition ${
+                  selectedBlockNumber === block.blockNumber
+                    ? 'bg-teal-700 text-white shadow-md'
+                    : 'bg-white text-gray-700 border hover:bg-gray-50'
+                }`}
+                onClick={() => {
+                  setSelectedBlockNumber(block.blockNumber)
+                  setSelectedFloorNumber(0)
+                  setSelectedRoom(null)
+                }}
+              >
+                Block {block.blockNumber}
+              </button>
+            ))}
+          </div>
+
+          {/* FLOOR SELECTOR TABS */}
+          {activeAllocation.blocks.find((b) => b.blockNumber === selectedBlockNumber) && (
+            <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Floor:</span>
+              {Array.from({
+                length: activeAllocation.blocks.find((b) => b.blockNumber === selectedBlockNumber).floorCount,
+              }).map((_, fIdx) => (
+                <button
+                  key={fIdx}
+                  type="button"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                    selectedFloorNumber === fIdx
+                      ? 'bg-teal-100 text-teal-800 border-2 border-teal-600'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  onClick={() => {
+                    setSelectedFloorNumber(fIdx)
+                    setSelectedRoom(null)
+                  }}
+                >
+                  {fIdx === 0 ? 'Ground Floor' : `Floor ${fIdx}`}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* LEGEND BAR */}
+          <div className="flex items-center justify-between bg-white p-3 rounded-xl border mb-6 text-xs text-gray-600 shadow-sm flex-wrap gap-2">
+            <span className="font-bold text-gray-800">Room Status Legend:</span>
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Available
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-amber-500 inline-block" /> Partially Occupied
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Full
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-purple-600 inline-block" /> RC / Warden Room
+              </span>
+            </div>
+          </div>
+
+          {/* ROOMS GRID */}
+          {isRoomsLoading ? (
+            <p className="admin-empty-text">Loading floor room map...</p>
+          ) : roomsList.length === 0 ? (
+            <p className="admin-empty-text">No rooms configured for this floor.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+              {roomsList.map((room) => {
+                const isRc = room.isRcRoom
+                const isFull = room.isFull
+                const isPartial = !isRc && room.occupiedCount > 0 && !isFull
+
+                return (
+                  <div
+                    key={room._id}
+                    role="button"
+                    tabIndex={isRc ? -1 : 0}
+                    onClick={() => handleSelectRoom(room)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') handleSelectRoom(room)
+                    }}
+                    className={`saas-card p-4 rounded-xl border text-center transition cursor-pointer hover:shadow-lg ${
+                      isRc
+                        ? 'bg-purple-50 border-purple-300 text-purple-900 cursor-not-allowed'
+                        : isFull
+                        ? 'bg-red-50 border-red-200 text-red-900'
+                        : isPartial
+                        ? 'bg-amber-50 border-amber-300 text-amber-900'
+                        : 'bg-white border-teal-200 hover:border-teal-500'
+                    }`}
+                  >
+                    <div className="text-xs font-bold uppercase tracking-wider mb-1">
+                      {isRc ? 'Warden Room' : `Room`}
+                    </div>
+                    <div className="text-lg font-black font-mono mb-2">
+                      {room.roomNumber}
+                    </div>
+                    {isRc ? (
+                      <span className="text-[11px] font-bold bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full inline-block">
+                        RC Room
+                      </span>
+                    ) : (
+                      <span
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                          isFull
+                            ? 'bg-red-200 text-red-800'
+                            : isPartial
+                            ? 'bg-amber-200 text-amber-900'
+                            : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {room.occupiedCount} / {room.capacity} Booked
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* SELECTED ROOM SLOTS VIEW */}
+          {selectedRoom && (
+            <div className="saas-card p-6 rounded-2xl border-2 border-teal-500 bg-white shadow-xl mb-8">
+              <div className="flex items-center justify-between border-b pb-4 mb-6">
+                <div>
+                  <span className="text-xs font-bold text-teal-600 uppercase tracking-wider">Room Seat Selection</span>
+                  <h3 className="text-xl font-black text-gray-900 font-mono">ROOM {selectedRoom.roomNumber}</h3>
+                  <p className="text-xs text-gray-500">Click an available slot seat to reserve your place.</p>
+                </div>
+
+                <button type="button" className="text-gray-400 hover:text-gray-600" onClick={() => setSelectedRoom(null)}>
+                  <FaTimes className="text-lg" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                {selectedRoom.slots.map((slot) => {
+                  const isTaken = slot.isBooked
+                  const isSelected = selectedSlotNumber === slot.slotNumber
+
+                  return (
+                    <div
+                      key={slot.slotNumber}
+                      role="button"
+                      tabIndex={isTaken ? -1 : 0}
+                      onClick={() => {
+                        if (isTaken) return
+                        setSelectedSlotNumber(slot.slotNumber)
+                      }}
+                      onKeyDown={(e) => {
+                        if (!isTaken && (e.key === 'Enter' || e.key === ' ')) setSelectedSlotNumber(slot.slotNumber)
+                      }}
+                      className={`p-4 rounded-xl border-2 text-center transition flex flex-col justify-between items-center h-32 ${
+                        isTaken
+                          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-75'
+                          : isSelected
+                          ? 'bg-teal-600 border-teal-700 text-white shadow-lg scale-105'
+                          : 'bg-white border-teal-300 text-gray-800 hover:bg-teal-50 hover:border-teal-500 cursor-pointer'
+                      }`}
+                    >
+                      <span className="text-xs font-bold uppercase">{slot.slotCode}</span>
+                      <FaBed className={`text-2xl ${isSelected ? 'text-white' : isTaken ? 'text-gray-300' : 'text-teal-600'}`} />
+                      <span className={`text-[11px] font-extrabold uppercase px-2 py-0.5 rounded ${
+                        isTaken
+                          ? 'bg-gray-200 text-gray-600'
+                          : isSelected
+                          ? 'bg-white text-teal-800'
+                          : 'bg-teal-100 text-teal-800'
+                      }`}>
+                        {isTaken ? 'OCCUPIED' : isSelected ? 'SELECTED' : 'AVAILABLE'}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {selectedSlotNumber && (
+                <div className="pt-4 border-t flex justify-end">
+                  <button
+                    type="button"
+                    className="btn btn-primary hover-lift text-sm px-6 py-2.5 font-bold"
+                    onClick={() => setShowConfirmModal(true)}
+                  >
+                    Proceed to Book Slot {selectedRoom.roomNumber}-{String.fromCharCode(64 + selectedSlotNumber)}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* BOOKING CONFIRMATION MODAL */}
+          {showConfirmModal && selectedRoom && selectedSlotNumber && (
+            <div className="forgot-modal-overlay" role="dialog" aria-modal="true">
+              <div className="forgot-card saas-card fade-in max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl border" onClick={(e) => e.stopPropagation()}>
+                <h3 className="text-lg font-extrabold text-gray-900 mb-2">Confirm Room Booking</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  You are reserving Slot <strong className="text-teal-700 font-mono">{selectedRoom.roomNumber}-{String.fromCharCode(64 + selectedSlotNumber)}</strong> in Block {selectedRoom.blockNumber}.
+                </p>
+
+                <form onSubmit={handleConfirmBooking} className="space-y-4 text-sm">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Student Name</label>
+                    <input type="text" className="input w-full bg-gray-100" value={currentUser?.username || ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                    <input type="text" className="input w-full bg-gray-100" value={currentUser?.email || ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Register / Mobile Number</label>
+                    <input
+                      type="text"
+                      className="input w-full"
+                      value={registerNo}
+                      onChange={(e) => setRegisterNo(e.target.value)}
+                      placeholder="e.g. 2024503001"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Department</label>
+                      <input
+                        type="text"
+                        className="input w-full"
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        placeholder="e.g. CSE"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Year</label>
+                      <select className="input w-full" value={year} onChange={(e) => setYear(e.target.value)} required>
+                        <option value="1st Year">1st Year</option>
+                        <option value="2nd Year">2nd Year</option>
+                        <option value="3rd Year">3rd Year</option>
+                        <option value="4th Year">4th Year</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      className="btn btn-outline hover-lift"
+                      onClick={() => setShowConfirmModal(false)}
+                      disabled={isBooking}
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn btn-primary hover-lift" disabled={isBooking}>
+                      {isBooking ? 'Confirming...' : 'Confirm & Book Slot'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>

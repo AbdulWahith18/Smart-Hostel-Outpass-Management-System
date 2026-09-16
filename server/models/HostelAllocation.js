@@ -17,6 +17,8 @@ const hostelAllocationSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     academicYear: { type: String, required: true, trim: true },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
     status: {
       type: String,
       enum: ['draft', 'published', 'closed'],
@@ -30,6 +32,14 @@ const hostelAllocationSchema = new mongoose.Schema(
     occupiedCount: { type: Number, default: 0 },
     publishedAt: { type: Date },
     closedAt: { type: Date },
+    closedBy: { type: String, default: null },
+    closureType: {
+      type: String,
+      enum: ['AUTOMATIC', 'ADMIN_FORCED', null],
+      default: null,
+    },
+    reportGenerated: { type: Boolean, default: false },
+    reportSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
     createdBy: { type: String, required: true },
   },
   {

@@ -13,6 +13,7 @@ import analyticsRoutes from './server/routes/analyticsRoutes.js'
 import aiRoutes from './server/routes/aiRoutes.js'
 import messageRoutes from './server/routes/messageRoutes.js'
 import hostelAllocationRoutes from './server/routes/hostelAllocationRoutes.js'
+import { startAllocationScheduler } from './server/services/hostelAllocationService.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -163,6 +164,7 @@ mongoose
   })
   .then(() => {
     console.log('MongoDB Connected ✅')
+    startAllocationScheduler(io)
   })
   .catch((error) => {
     console.error('MongoDB connection failed:', error.message)

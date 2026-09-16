@@ -9,6 +9,10 @@ import {
   deleteAllocation,
   getAllocationOccupancy,
   getAllocationBookings,
+  getAllocationReport,
+  downloadAllocationPDF,
+  downloadAllocationCSV,
+  regenerateReport,
   getActiveAllocation,
   getMyBooking,
   getRooms,
@@ -36,5 +40,11 @@ router.patch('/admin/:id/close', requireAuth, requireAdmin, closeAllocation)
 router.delete('/admin/:id', requireAuth, requireAdmin, deleteAllocation)
 router.get('/admin/:id/occupancy', requireAuth, requireAdmin, getAllocationOccupancy)
 router.get('/admin/:id/bookings', requireAuth, requireAdmin, getAllocationBookings)
+
+/* REPORT ROUTES */
+router.get('/admin/:id/report', requireAuth, requireAdmin, getAllocationReport)
+router.get('/admin/:id/report/pdf', requireAuth, requireAdmin, downloadAllocationPDF)
+router.get('/admin/:id/report/csv', requireAuth, requireAdmin, downloadAllocationCSV)
+router.post('/admin/:id/report/regenerate', requireAuth, requireAdmin, regenerateReport)
 
 export default router

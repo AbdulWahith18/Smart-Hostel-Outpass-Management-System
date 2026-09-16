@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getAuthToken } from '../utils/authToken'
 import { useToast } from './Toast'
-import { FaBuilding, FaBed, FaCheckCircle, FaExclamationTriangle, FaEye, FaLock, FaTrash, FaPlus, FaTimes } from 'react-icons/fa'
+import { FaBuilding, FaBed, FaEye, FaTrash, FaPlus, FaTimes, FaFilePdf, FaFileCsv, FaClock, FaStopCircle, FaDownload } from 'react-icons/fa'
 
 export default function HostelAllocationAdmin() {
   const toast = useToast()
@@ -10,13 +10,21 @@ export default function HostelAllocationAdmin() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedAllocationId, setSelectedAllocationId] = useState(null)
   const [occupancyData, setOccupancyData] = useState(null)
-  const [isOccupancyLoading, setIsOccupancyLoading] = useState(false)
   const [bookingsData, setBookingsData] = useState([])
   const [bookingSearch, setBookingSearch] = useState('')
 
   // Form State
   const [name, setName] = useState('2026-27 Hostel Allocation')
   const [academicYear, setAcademicYear] = useState('2026-2027')
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [startTimeVal, setStartTimeVal] = useState('10:00')
+  const [endDate, setEndDate] = useState(() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 2)
+    return d.toISOString().slice(0, 10)
+  })
+  const [endTimeVal, setEndTimeVal] = useState('18:00')
+
   const [blockCount, setBlockCount] = useState(3)
   const [blocksConfig, setBlocksConfig] = useState([
     { blockNumber: 1, floorCount: 4, roomsPerFloor: 10, studentsPerRoom: 4 },
@@ -26,6 +34,21 @@ export default function HostelAllocationAdmin() {
   const [previewData, setPreviewData] = useState(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Report & Modal States
+  const [showCloseModal, setShowCloseModal] = useState(false)
+  const [targetCloseId, setTargetCloseId] = useState(null)
+  const [isClosing, setIsClosing] = useState(false)
+  const [reportModalData, setReportModalData] = useState(null)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [isReportLoading, setIsReportLoading] = useState(false)
+  const [nowTime, setNowTime] = useState(Date.now())
+
+  // Ticker for live countdown
+  useEffect(() => {
+    const timer = setInterval(() => setNowTime(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   const fetchAllocations = async () => {
     setIsLoading(true)
@@ -50,6 +73,33 @@ export default function HostelAllocationAdmin() {
   useEffect(() => {
     fetchAllocations()
   }, [])
+
+  const formatIST = (dateVal) => {
+    if (!dateVal) return '-'
+    const d = new Date(dateVal)
+    if (Number.isNaN(d.getTime())) return '-'
+    return d.toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  const getTimeRemaining = (endTimeStr) => {
+    if (!endTimeStr) return null
+    const end = new Date(endTimeStr).getTime()
+    const diff = end - nowTime
+    if (diff <= 0) return 'Ended / Expired'
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const secs = Math.floor((diff % (1000 * 60)) / 1000)
+    return `${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+  }
 
   const handleBlockCountChange = (count) => {
     const num = Math.max(1, Math.min(10, Number(count) || 1))
@@ -83,6 +133,14 @@ export default function HostelAllocationAdmin() {
   }
 
   const handlePreview = async () => {
+    const startIso = `${startDate}T${startTimeVal}`
+    const endIso = `${endDate}T${endTimeVal}`
+
+    if (new Date(endIso) <= new Date(startIso)) {
+      toast.warning('Scheduled End Time must be later than Start Time.')
+      return
+    }
+
     setIsPreviewLoading(true)
     try {
       const token = getAuthToken()
@@ -95,6 +153,8 @@ export default function HostelAllocationAdmin() {
         body: JSON.stringify({
           name,
           academicYear,
+          startTime: startIso,
+          endTime: endIso,
           blocks: blocksConfig,
         }),
       })
@@ -116,6 +176,14 @@ export default function HostelAllocationAdmin() {
   }
 
   const handleCreateAllocation = async (autoPublish = false) => {
+    const startIso = `${startDate}T${startTimeVal}`
+    const endIso = `${endDate}T${endTimeVal}`
+
+    if (new Date(endIso) <= new Date(startIso)) {
+      toast.warning('Scheduled End Time must be later than Start Time.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const token = getAuthToken()
@@ -128,6 +196,8 @@ export default function HostelAllocationAdmin() {
         body: JSON.stringify({
           name,
           academicYear,
+          startTime: startIso,
+          endTime: endIso,
           blocks: blocksConfig,
           autoPublish,
         }),
@@ -170,23 +240,29 @@ export default function HostelAllocationAdmin() {
     }
   }
 
-  const handleClose = async (id) => {
+  const handleConfirmClose = async () => {
+    if (!targetCloseId) return
+    setIsClosing(true)
     try {
       const token = getAuthToken()
-      const response = await fetch(`/api/hostel-allocations/admin/${id}/close`, {
+      const response = await fetch(`/api/hostel-allocations/admin/${targetCloseId}/close`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await response.json()
       if (!response.ok) {
-        toast.error(data.message || 'Failed to close allocation.')
+        toast.error(data.message || 'Failed to end allocation.')
         return
       }
 
-      toast.success(data.message)
+      toast.success(data.message || 'Hostel allocation ended. Final report generated.')
+      setShowCloseModal(false)
+      setTargetCloseId(null)
       fetchAllocations()
     } catch {
       toast.error('Failed to connect to server.')
+    } finally {
+      setIsClosing(false)
     }
   }
 
@@ -211,9 +287,101 @@ export default function HostelAllocationAdmin() {
     }
   }
 
+  const viewReport = async (id) => {
+    setIsReportLoading(true)
+    setShowReportModal(true)
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/hostel-allocations/admin/${id}/report`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await response.json()
+      if (response.ok && data.reportSnapshot) {
+        setReportModalData(data.reportSnapshot)
+      } else {
+        toast.error(data.message || 'Failed to fetch report data.')
+        setShowReportModal(false)
+      }
+    } catch {
+      toast.error('Unable to fetch report data.')
+      setShowReportModal(false)
+    } finally {
+      setIsReportLoading(false)
+    }
+  }
+
+  const downloadPDF = async (id, name = 'Hostel_Allocation') => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/hostel-allocations/admin/${id}/report/pdf`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!response.ok) {
+        let errorMsg = 'Failed to generate PDF report.'
+        try {
+          const errData = await response.json()
+          if (errData.message) errorMsg = errData.message
+        } catch {
+          // ignore
+        }
+        toast.error(errorMsg)
+        return
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      const safeName = (name || 'Allocation').replace(/[^a-zA-Z0-9_-]/g, '_')
+      link.download = `HOMS_${safeName}_Report.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Allocation PDF report downloaded successfully.')
+    } catch {
+      toast.error('Report generation failed. Please try again.')
+    }
+  }
+
+  const downloadCSV = async (id, name = 'Hostel_Allocation') => {
+    try {
+      const token = getAuthToken()
+      const response = await fetch(`/api/hostel-allocations/admin/${id}/report/csv`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (!response.ok) {
+        let errorMsg = 'Failed to export CSV report.'
+        try {
+          const errData = await response.json()
+          if (errData.message) errorMsg = errData.message
+        } catch {
+          // ignore
+        }
+        toast.error(errorMsg)
+        return
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      const safeName = (name || 'Allocation').replace(/[^a-zA-Z0-9_-]/g, '_')
+      link.download = `HOMS_${safeName}_Report.csv`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Allocation CSV export downloaded successfully.')
+    } catch {
+      toast.error('CSV export failed. Please try again.')
+    }
+  }
+
   const fetchOccupancy = async (id) => {
     setSelectedAllocationId(id)
-    setIsOccupancyLoading(true)
     setActiveTab('occupancy')
     try {
       const token = getAuthToken()
@@ -228,8 +396,6 @@ export default function HostelAllocationAdmin() {
       }
     } catch {
       toast.error('Unable to load occupancy stats.')
-    } finally {
-      setIsOccupancyLoading(false)
     }
   }
 
@@ -268,8 +434,8 @@ export default function HostelAllocationAdmin() {
     <section className="admin-access-wrap" aria-label="Hostel Allocation System">
       <div className="admin-users-header">
         <div className="admin-users-title-block">
-          <h2>Hostel Allocation Management</h2>
-          <p className="admin-users-subtitle">Configure blocks, programmatically generate rooms, publish allocations, and monitor real-time student bookings.</p>
+          <h2>Hostel Allocation Lifecycle & Report Management</h2>
+          <p className="admin-users-subtitle">Configure scheduled allocations, trigger automatic/force closures, monitor IST countdowns, and export publication-grade reports.</p>
         </div>
 
         <div className="admin-users-actions">
@@ -336,59 +502,104 @@ export default function HostelAllocationAdmin() {
 
           {!isLoading && allocations.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {allocations.map((item) => (
-                <div key={item._id} className="saas-card hover-lift p-6 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          item.status === 'published'
-                            ? 'bg-green-100 text-green-700'
-                            : item.status === 'closed'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}
-                      >
-                        {item.status.toUpperCase()}
-                      </span>
-                      <span className="text-xs text-gray-500">{item.academicYear}</span>
+              {allocations.map((item) => {
+                const isPublished = item.status === 'published'
+                const isClosed = item.status === 'closed'
+                const isDraft = item.status === 'draft'
+                const countdown = isPublished ? getTimeRemaining(item.endTime) : null
+
+                return (
+                  <div key={item._id} className="saas-card hover-lift p-6 rounded-xl border border-gray-200 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            isPublished
+                              ? 'bg-green-100 text-green-700'
+                              : isClosed
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}
+                        >
+                          ● {isPublished ? 'ACTIVE' : isClosed ? 'ENDED / CLOSED' : 'DRAFT'}
+                        </span>
+                        <span className="text-xs text-gray-500">{item.academicYear}</span>
+                      </div>
+
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">{item.name}</h3>
+
+                      {isPublished && (
+                        <div className="p-3 mb-4 rounded-lg bg-teal-50 border border-teal-200 text-xs text-teal-900">
+                          <p className="font-bold flex items-center gap-1 text-teal-800">
+                            <FaClock className="text-teal-600" /> Time Remaining: {countdown}
+                          </p>
+                          <p className="mt-1">Starts: {formatIST(item.startTime)}</p>
+                          <p>Ends: {formatIST(item.endTime)}</p>
+                        </div>
+                      )}
+
+                      {isClosed && (
+                        <div className="p-3 mb-4 rounded-lg bg-red-50 border border-red-200 text-xs text-red-900">
+                          <p className="font-bold text-red-800">
+                            Closure: {item.closureType === 'ADMIN_FORCED' ? 'Admin Forced Closure' : 'Automatic — Scheduled End Time'}
+                          </p>
+                          <p className="mt-1">Closed At: {formatIST(item.closedAt)}</p>
+                          <p>Closed By: {item.closedBy || 'System'}</p>
+                        </div>
+                      )}
+
+                      <div className="text-sm text-gray-600 space-y-1 mb-4">
+                        <p><FaBuilding className="inline mr-1 text-teal-600" /> Blocks: <strong>{item.totalBlocks}</strong></p>
+                        <p><FaBed className="inline mr-1 text-teal-600" /> Student Rooms: <strong>{item.totalRooms}</strong></p>
+                        <p>Total Capacity: <strong>{item.totalCapacity}</strong></p>
+                        <p>Occupied Slots: <span className="font-semibold text-teal-700">{item.occupiedCount} / {item.totalCapacity}</span></p>
+                        <p>Available Slots: <span className="font-semibold text-green-600">{item.totalCapacity - item.occupiedCount}</span></p>
+                      </div>
                     </div>
 
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{item.name}</h3>
-                    <div className="text-sm text-gray-600 space-y-1 mb-4">
-                      <p><FaBuilding className="inline mr-1 text-teal-600" /> Blocks: <strong>{item.totalBlocks}</strong></p>
-                      <p><FaBed className="inline mr-1 text-teal-600" /> Student Rooms: <strong>{item.totalRooms}</strong></p>
-                      <p>Total Student Capacity: <strong>{item.totalCapacity}</strong></p>
-                      <p>Occupied Slots: <span className="font-semibold text-teal-700">{item.occupiedCount} / {item.totalCapacity}</span></p>
-                      <p>Available Slots: <span className="font-semibold text-green-600">{item.totalCapacity - item.occupiedCount}</span></p>
+                    <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-2">
+                      {isDraft && (
+                        <button type="button" className="btn btn-primary text-xs px-3 py-1.5" onClick={() => handlePublish(item._id)}>
+                          Publish
+                        </button>
+                      )}
+                      {isPublished && (
+                        <button
+                          type="button"
+                          className="btn btn-outline text-xs px-3 py-1.5 text-red-600 border-red-300 font-bold"
+                          onClick={() => {
+                            setTargetCloseId(item._id)
+                            setShowCloseModal(true)
+                          }}
+                        >
+                          <FaStopCircle className="inline mr-1" /> END ALLOCATION
+                        </button>
+                      )}
+                      {isClosed && (
+                        <>
+                          <button type="button" className="btn btn-primary text-xs px-3 py-1.5" onClick={() => viewReport(item._id)}>
+                            <FaEye className="inline mr-1" /> View Report
+                          </button>
+                          <button type="button" className="btn btn-outline text-xs px-3 py-1.5 text-teal-700" onClick={() => downloadPDF(item._id, item.name)}>
+                            <FaFilePdf className="inline mr-1 text-red-600" /> PDF
+                          </button>
+                          <button type="button" className="btn btn-outline text-xs px-3 py-1.5 text-green-700" onClick={() => downloadCSV(item._id, item.name)}>
+                            <FaFileCsv className="inline mr-1 text-green-600" /> CSV
+                          </button>
+                        </>
+                      )}
+                      <button type="button" className="btn btn-outline text-xs px-3 py-1.5" onClick={() => fetchOccupancy(item._id)}>
+                        Stats
+                      </button>
+                      {isDraft && (
+                        <button type="button" className="btn btn-outline text-xs px-2.5 py-1.5 text-red-500" onClick={() => handleDelete(item._id)}>
+                          <FaTrash />
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  <div className="pt-4 border-t border-gray-100 flex flex-wrap gap-2">
-                    {item.status === 'draft' && (
-                      <button type="button" className="btn btn-primary text-xs px-3 py-1.5" onClick={() => handlePublish(item._id)}>
-                        Publish
-                      </button>
-                    )}
-                    {item.status === 'published' && (
-                      <button type="button" className="btn btn-outline text-xs px-3 py-1.5 text-red-600 border-red-300" onClick={() => handleClose(item._id)}>
-                        Close Allocation
-                      </button>
-                    )}
-                    <button type="button" className="btn btn-outline text-xs px-3 py-1.5" onClick={() => fetchOccupancy(item._id)}>
-                      <FaEye className="inline mr-1" /> Stats
-                    </button>
-                    <button type="button" className="btn btn-outline text-xs px-3 py-1.5" onClick={() => fetchBookings(item._id)}>
-                      Bookings
-                    </button>
-                    {item.status === 'draft' && (
-                      <button type="button" className="btn btn-outline text-xs px-2.5 py-1.5 text-red-500" onClick={() => handleDelete(item._id)}>
-                        <FaTrash />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -398,7 +609,7 @@ export default function HostelAllocationAdmin() {
       {activeTab === 'create' && (
         <div className="saas-card hover-lift p-6 rounded-xl border border-gray-200 bg-white shadow-md max-w-4xl">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Host New Hostel Allocation</h3>
-          <p className="text-sm text-gray-600 mb-6">Configure blocks, floors, rooms per floor, and students per room. Rooms and RC rooms will be generated automatically.</p>
+          <p className="text-sm text-gray-600 mb-6">Specify allocation title, academic year, scheduled start & end times (IST), and block configurations.</p>
 
           <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
@@ -424,6 +635,31 @@ export default function HostelAllocationAdmin() {
                   placeholder="e.g. 2026-2027"
                   required
                 />
+              </div>
+            </div>
+
+            {/* SCHEDULED PERIOD */}
+            <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-4">
+              <h4 className="font-bold text-teal-900 text-sm flex items-center gap-1.5">
+                <FaClock className="text-teal-700" /> Scheduled Period (IST Timezone)
+              </h4>
+
+              <div className="grid md:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Start Date & Time</label>
+                  <div className="flex gap-2">
+                    <input type="date" className="input text-xs w-full" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+                    <input type="time" className="input text-xs w-32" value={startTimeVal} onChange={(e) => setStartTimeVal(e.target.value)} required />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">End Date & Time</label>
+                  <div className="flex gap-2">
+                    <input type="date" className="input text-xs w-full" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                    <input type="time" className="input text-xs w-32" value={endTimeVal} onChange={(e) => setEndTimeVal(e.target.value)} required />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -674,6 +910,134 @@ export default function HostelAllocationAdmin() {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ADMIN FORCE CLOSE CONFIRMATION MODAL */}
+      {showCloseModal && (
+        <div className="forgot-modal-overlay" role="dialog" aria-modal="true">
+          <div className="forgot-card saas-card fade-in max-w-md w-full p-6 rounded-2xl bg-white shadow-2xl border" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-extrabold text-red-700 mb-2">End Hostel Allocation?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This will immediately stop all new hostel room bookings. Students will no longer be able to reserve slots. A final immutable allocation report will be generated.
+            </p>
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button type="button" className="btn btn-outline hover-lift text-gray-700" onClick={() => setShowCloseModal(false)} disabled={isClosing}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-primary bg-red-600 hover:bg-red-700 hover-lift" onClick={handleConfirmClose} disabled={isClosing}>
+                {isClosing ? 'Ending Allocation...' : 'End Allocation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT VIEWER MODAL */}
+      {showReportModal && (
+        <div className="forgot-modal-overlay" role="dialog" aria-modal="true">
+          <div className="forgot-card saas-card fade-in max-w-4xl w-full p-6 rounded-2xl bg-white shadow-2xl border max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b pb-4 mb-4">
+              <div>
+                <span className="text-xs font-bold text-red-700 uppercase bg-red-100 px-2.5 py-0.5 rounded-full">CLOSED REPORT SNAPSHOT</span>
+                <h3 className="text-xl font-extrabold text-gray-900 mt-1">Hostel Room Allocation Report</h3>
+              </div>
+              <button type="button" className="text-gray-400 hover:text-gray-600" onClick={() => setShowReportModal(false)}>
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+
+            {isReportLoading ? (
+              <p className="admin-empty-text">Loading report snapshot...</p>
+            ) : reportModalData ? (
+              <div className="space-y-6 text-sm text-gray-800">
+                {/* Header Info */}
+                <div className="p-4 rounded-xl bg-gray-50 border grid md:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <p><strong>Allocation Name:</strong> {reportModalData.allocationHeader?.name}</p>
+                    <p><strong>Academic Year:</strong> {reportModalData.allocationHeader?.academicYear}</p>
+                    <p><strong>Scheduled Period:</strong> {reportModalData.allocationHeader?.startTimeIST} to {reportModalData.allocationHeader?.endTimeIST}</p>
+                  </div>
+                  <div>
+                    <p><strong>Closure Type:</strong> <span className="font-bold text-red-700">{reportModalData.allocationHeader?.closureType}</span></p>
+                    <p><strong>Closed At:</strong> {reportModalData.allocationHeader?.closedAtIST}</p>
+                    <p><strong>Closed By:</strong> {reportModalData.allocationHeader?.closedBy}</p>
+                  </div>
+                </div>
+
+                {/* Summary Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                  <div className="p-3 bg-teal-50 border rounded-lg">
+                    <p className="text-xs text-gray-500">Student Capacity</p>
+                    <p className="text-lg font-bold text-teal-900">{reportModalData.summary?.totalStudentCapacity}</p>
+                  </div>
+                  <div className="p-3 bg-teal-50 border rounded-lg">
+                    <p className="text-xs text-gray-500">Occupied Slots</p>
+                    <p className="text-lg font-bold text-teal-700">{reportModalData.summary?.occupiedSlots}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 border rounded-lg">
+                    <p className="text-xs text-gray-500">Available Slots</p>
+                    <p className="text-lg font-bold text-green-700">{reportModalData.summary?.availableSlots}</p>
+                  </div>
+                  <div className="p-3 bg-purple-50 border rounded-lg">
+                    <p className="text-xs text-gray-500">Occupancy Rate</p>
+                    <p className="text-lg font-bold text-purple-700">{reportModalData.summary?.occupancyPercentage}</p>
+                  </div>
+                </div>
+
+                {/* Block & Room Detailed Breakdown */}
+                <div className="space-y-4">
+                  {reportModalData.blocks?.map((b) => (
+                    <div key={b.blockNumber} className="border rounded-xl p-4 bg-white space-y-3">
+                      <div className="flex justify-between border-b pb-2">
+                        <h4 className="font-bold text-gray-900">{b.blockName}</h4>
+                        <span className="text-xs font-semibold text-gray-500">{b.occupied} / {b.capacity} Occupied ({b.occupancyPercentage})</span>
+                      </div>
+                      <p className="text-xs text-purple-700 font-semibold">RC Room: {b.rcRoomName} (RESERVED)</p>
+
+                      {b.floors?.map((f) => (
+                        <div key={f.floorNumber} className="pl-2 border-l-2 border-teal-500 space-y-2">
+                          <h5 className="font-bold text-xs text-teal-800">{f.floorName}</h5>
+                          <div className="space-y-2">
+                            {f.rooms?.map((r) => (
+                              <div key={r.roomNumber} className="p-2 rounded bg-gray-50 border text-xs">
+                                <div className="flex justify-between font-bold mb-1">
+                                  <span>Room {r.roomNumber} (Cap: {r.capacity})</span>
+                                  <span className={r.status === 'FULL' ? 'text-red-600' : r.status === 'EMPTY' ? 'text-gray-400' : 'text-amber-600'}>
+                                    Status: {r.status}
+                                  </span>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-1 text-[11px] text-gray-600">
+                                  {r.slots?.map((s) => (
+                                    <div key={s.slotCode} className="p-1 rounded bg-white border">
+                                      <span className="font-mono font-bold text-teal-800">{s.slotCode}: </span>
+                                      {s.isBooked ? `${s.studentName} (${s.registerNo}) - ${s.department}` : '[ UNBOOKED ]'}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button type="button" className="btn btn-outline text-teal-700" onClick={() => downloadCSV(selectedAllocationId)}>
+                    <FaFileCsv className="inline mr-1 text-green-600" /> Export CSV
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={() => downloadPDF(selectedAllocationId)}>
+                    <FaDownload className="inline mr-1" /> Download PDF Report
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="admin-empty-text">No report snapshot available.</p>
+            )}
+          </div>
         </div>
       )}
     </section>
