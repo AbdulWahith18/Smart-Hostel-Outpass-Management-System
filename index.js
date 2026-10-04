@@ -13,6 +13,7 @@ import analyticsRoutes from './server/routes/analyticsRoutes.js'
 import aiRoutes from './server/routes/aiRoutes.js'
 import messageRoutes from './server/routes/messageRoutes.js'
 import hostelAllocationRoutes from './server/routes/hostelAllocationRoutes.js'
+import complaintRoutes from './server/routes/complaintRoutes.js'
 import { startAllocationScheduler } from './server/services/hostelAllocationService.js'
 import { sendMail } from './server/utils/sendMail.js'
 
@@ -138,6 +139,7 @@ app.use('/api/admin', analyticsRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/hostel-allocations', hostelAllocationRoutes)
+app.use('/api/complaints', complaintRoutes)
 
 /* SERVE VITE PRODUCTION BUILD IN UNIFIED DEPLOYMENT */
 app.use(express.static(path.join(__dirname, 'dist')))

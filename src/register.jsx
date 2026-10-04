@@ -134,7 +134,7 @@ function Register({ onBackToLogin, onOpenTerms, draftValues = defaultDraftValues
     <main className="register-page">
       <section className="register-card saas-card fade-in" aria-labelledby="register-title">
         <h1 id="register-title">Register</h1>
-        <p className="register-subtitle">Create your account to access the hostel outpass system.</p>
+        <p className="register-subtitle">Create your account to access the HAVENTRA hostel system.</p>
 
         <form className="register-form" onSubmit={handleSubmit}>
           <label htmlFor="userType">User Type</label>

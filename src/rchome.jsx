@@ -3,6 +3,7 @@ import { io } from 'socket.io-client'
 import './rchome.css'
 import { getAuthToken } from './utils/authToken'
 import { useToast } from './components/Toast'
+import StudentComplaintView from './components/StudentComplaintView'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -544,6 +545,10 @@ function RCHome({ currentRc, activeView = 'pending', onViewChange }) {
               )}
             </div>
           </section>
+        )}
+
+        {activeView === 'complaints' && (
+          <StudentComplaintView currentUser={currentRc} />
         )}
 
         {isChatboxView && (

@@ -3,7 +3,7 @@ import PublicInfoPage from './publicinfopage'
 const ABOUT_SECTIONS = [
   {
     title: 'What This App Does',
-    body: 'HOMS is a digital platform for managing student outpass requests in hostels. It removes manual slips and lets students, RCs, and admins work in one connected workflow.',
+    body: 'HAVENTRA is a digital platform for managing student outpass requests and room allocations in hostels. It removes manual slips and lets students, RCs, and admins work in one connected workflow.',
     points: [
       'Students can apply quickly with outing details.',
       'RC can review and approve or reject requests instantly.',
@@ -35,9 +35,9 @@ export default function AboutPage(props) {
   return (
     <PublicInfoPage
       pageKey="about"
-      title="About HOMS"
-      subtitle="A secure and paperless hostel outpass workflow"
-      intro="HOMS simplifies outpass management with clear steps, transparent approvals, and faster communication between students and hostel authorities."
+      title="About HAVENTRA"
+      subtitle="A secure and paperless smart hostel management system"
+      intro="HAVENTRA simplifies hostel management with clear steps, transparent approvals, and faster communication between students and hostel authorities."
       sections={ABOUT_SECTIONS}
       {...props}
     />

@@ -59,12 +59,11 @@ export default function MainPage({ onLogin, onRegister, onNavigate }) {
             <div className="splash-logo-wrap">
               <div className="splash-logo-ring" />
               <div className="splash-logo-glow" />
-              <img className="splash-logo" src={homsLogo} alt="HOMS" />
+              <img className="splash-logo" src={homsLogo} alt="HAVENTRA" />
             </div>
             <div className="splash-name">
-              <span className="splash-name-hostel">Hostel</span>
-              <span className="splash-name-outpass">Outpass</span>
-              <span className="splash-name-sub">Management System</span>
+              <span className="splash-name-hostel">HAVENTRA</span>
+              <span className="splash-name-sub">Smart Hostel Management System</span>
             </div>
           </div>
         </div>
@@ -77,10 +76,10 @@ export default function MainPage({ onLogin, onRegister, onNavigate }) {
         <header className="mp-topbar mp-reveal mp-r0">
           <div className="mp-topbar-inner">
             <div className="mp-topbar-brand">
-              <img className="mp-topbar-logo" src={homsLogo} alt="HOMS" />
+              <img className="mp-topbar-logo" src={homsLogo} alt="HAVENTRA" />
               <div className="mp-topbar-name">
-                <span className="mp-topbar-name-main">HOMS</span>
-                <span className="mp-topbar-name-sub">Hostel Outpass</span>
+                <span className="mp-topbar-name-main">HAVENTRA</span>
+                <span className="mp-topbar-name-sub">Smart Hostel System</span>
               </div>
             </div>
             <nav className="mp-topbar-nav">
@@ -119,14 +118,14 @@ export default function MainPage({ onLogin, onRegister, onNavigate }) {
             <div className="mp-hero-head mp-reveal mp-r1">
               <div className="mp-badge">
                 <span className="mp-badge-dot" />
-                Hostel Outpass Management Platform
+                HAVENTRA — Smart Hostel Management Platform
               </div>
               <h1 className="mp-headline">
                 <span className="mp-hl-top">Smart Outpass,</span>
                 <span className="mp-hl-btm">Paperless Approvals</span>
               </h1>
               <p className="mp-subtitle">
-                A single platform where students apply for outing passes and wardens approve them instantly — no queues, no paperwork.
+                A single platform where students apply for outing passes and room allocations — no queues, no paperwork.
               </p>
             </div>
 
@@ -171,7 +170,7 @@ export default function MainPage({ onLogin, onRegister, onNavigate }) {
           </div>
 
           <p className="mp-brand mp-reveal mp-r6">
-            HOMS <span>·</span> Hostel Outpass Management System
+            HAVENTRA <span>·</span> Smart Hostel Management System
           </p>
         </main>
       </div>

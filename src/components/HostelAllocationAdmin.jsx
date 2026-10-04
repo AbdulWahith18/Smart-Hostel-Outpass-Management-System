@@ -340,7 +340,7 @@ export default function HostelAllocationAdmin() {
       const link = document.createElement('a')
       link.href = url
       const safeName = (name || 'Allocation').replace(/[^a-zA-Z0-9_-]/g, '_')
-      link.download = `HOMS_${safeName}_Report.pdf`
+      link.download = `HAVENTRA_${safeName}_Report.pdf`
       document.body.appendChild(link)
       link.click()
       link.remove()
@@ -381,7 +381,7 @@ export default function HostelAllocationAdmin() {
       const link = document.createElement('a')
       link.href = url
       const safeName = (name || 'Allocation').replace(/[^a-zA-Z0-9_-]/g, '_')
-      link.download = `HOMS_${safeName}_Report.csv`
+      link.download = `HAVENTRA_${safeName}_Report.csv`
       document.body.appendChild(link)
       link.click()
       link.remove()

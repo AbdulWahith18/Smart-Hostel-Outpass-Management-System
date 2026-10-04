@@ -4,6 +4,7 @@ import './studenthome.css'
 import { getAuthToken } from './utils/authToken'
 import { useToast } from './components/Toast'
 import HostelAllocationStudent from './components/HostelAllocationStudent'
+import StudentComplaintView from './components/StudentComplaintView'
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -431,6 +432,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
 
 
   const isQueryView = activeView === 'queries'
+  const isComplaintView = activeView === 'complaints'
   const isChatboxView = activeView === 'chatbox'
   const isHostelView = activeView === 'hostel'
   const groupMessages = useMemo(() => sortMessagesChronologically(chatboxMessages), [chatboxMessages])
@@ -441,7 +443,7 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
       <section className="student-home-card saas-card fade-in" aria-labelledby="apply-pass-title">
         <header className="student-home-header">
           <h1 id="apply-pass-title">Student Dashboard</h1>
-          <p className="student-home-subtitle">Manage your hostel outpass applications in one place.</p>
+          <p className="student-home-subtitle">Manage your HAVENTRA hostel outpass applications in one place.</p>
         </header>
 
         <section className="student-summary-grid" aria-label="Application summary">
@@ -547,6 +549,10 @@ function StudentHome({ currentUser, activeView = 'apply', onViewChange }) {
               )}
             </div>
           </section>
+        )}
+
+        {isComplaintView && (
+          <StudentComplaintView currentUser={currentUser} />
         )}
 
         {isChatboxView && (

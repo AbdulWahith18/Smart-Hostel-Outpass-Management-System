@@ -71,7 +71,7 @@ const generateWithFallback = async (prompt) => {
 }
 
 export const generateAnalyticsSummary = async (data) => {
-  const prompt = `You are an AI assistant for a Hostel Outpass Management System admin dashboard.
+  const prompt = `You are an AI assistant for HAVENTRA — Smart Hostel Management System admin dashboard.
 Analyze the following data and generate 3-5 short insights for the admin.
 
 Data:
@@ -88,7 +88,7 @@ Return short bullet point insights.`
 }
 
 export const answerAdminAnalyticsQuestion = async ({ question, stats, dateCounts, dayCounts, topApplicants }) => {
-  const prompt = `You are an AI analytics assistant for a Hostel Outpass Management System.
+  const prompt = `You are an AI analytics assistant for HAVENTRA — Smart Hostel Management System.
 Answer using only the provided data. Keep answers short and factual.
 If exact data for a request is missing, say so briefly.
 

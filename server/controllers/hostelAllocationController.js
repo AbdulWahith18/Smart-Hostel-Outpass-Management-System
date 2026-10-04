@@ -482,7 +482,7 @@ export const downloadAllocationCSV = async (req, res) => {
     }
 
     const csvLines = []
-    csvLines.push(`HOSTEL OUTPASS MANAGEMENT SYSTEM - HOSTEL ROOM ALLOCATION REPORT`)
+    csvLines.push(`HAVENTRA — SMART HOSTEL MANAGEMENT SYSTEM - HOSTEL ROOM ALLOCATION REPORT`)
     csvLines.push(`Academic Year,${escapeCsv(header.academicYear || allocation.academicYear || '')}`)
     csvLines.push(`Allocation Name,${escapeCsv(header.name || allocation.name || '')}`)
     csvLines.push(`Period,${escapeCsv(`${header.startTimeIST || formatIST(allocation.startTime)} to ${header.endTimeIST || formatIST(allocation.endTime)}`)}`)
@@ -555,7 +555,7 @@ export const downloadAllocationCSV = async (req, res) => {
     const safeYear = (allocation.academicYear || '2026-27').replace(/[^a-zA-Z0-9_-]/g, '_')
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
-    res.setHeader('Content-Disposition', `attachment; filename="HOMS_${safeName}_${safeYear}.csv"`)
+    res.setHeader('Content-Disposition', `attachment; filename="HAVENTRA_${safeName}_${safeYear}.csv"`)
     res.status(200).send(csvContent)
   } catch (err) {
     console.error('CSV Generation Error:', err)

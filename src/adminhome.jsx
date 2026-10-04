@@ -4,6 +4,7 @@ import { io } from "socket.io-client"
 import { getAuthToken } from './utils/authToken'
 import { useToast } from './components/Toast'
 import HostelAllocationAdmin from './components/HostelAllocationAdmin'
+import AdminComplaintView from './components/AdminComplaintView'
 
 const INACTIVITY_DAYS = 60
 
@@ -99,6 +100,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
   const isUserView = activeView === 'view' || activeView === 'manage'
   const isPendingRcsView = activeView === 'pending-rcs'
   const isHostelView = activeView === 'hostel'
+  const isComplaintView = activeView === 'complaints'
   const chatStorageKey = `admin-ai-chat-${currentUser?.username ?? 'default'}`
 
   const fetchPendingRcs = async () => {
@@ -663,7 +665,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
   const exportChat = () => {
     const lines = []
-    lines.push('HOMS Admin AI Chat Export')
+    lines.push('HAVENTRA Admin AI Chat Export')
     lines.push(`Exported At: ${new Date().toLocaleString()}`)
 
     if (chatContextMeta) {
@@ -683,7 +685,7 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
     const blobUrl = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = blobUrl
-    link.download = `homs-admin-ai-chat-${Date.now()}.txt`
+    link.download = `haventra-admin-ai-chat-${Date.now()}.txt`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -878,6 +880,10 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
 
         {isHostelView && (
           <HostelAllocationAdmin />
+        )}
+
+        {isComplaintView && (
+          <AdminComplaintView currentUser={currentUser} />
         )}
 
         {isInboxView && (

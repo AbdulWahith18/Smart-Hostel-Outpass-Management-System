@@ -32,14 +32,14 @@ const TERMS_SECTIONS = [
     title: 'Data and Usage Policy',
     body: 'The system stores required account and request data to process outpass workflows, maintain audit records, and support hostel administration.',
     points: [
-      'Data is used only for operational and security needs of HOMS.',
+      'Data is used only for operational and security needs of HAVENTRA.',
       'Admins and authorized roles may view relevant records.',
       'Users should keep personal profile and request information accurate.',
     ],
   },
   {
     title: 'Compliance and Conduct',
-    body: 'Using HOMS means agreeing to follow hostel conduct standards and institutional regulations. Violations may lead to account review, pass cancellation, or disciplinary action.',
+    body: 'Using HAVENTRA means agreeing to follow hostel conduct standards and institutional regulations. Violations may lead to account review, pass cancellation, or disciplinary action.',
     points: [
       'Do not submit false reasons or manipulated timings.',
       'Do not attempt unauthorized access to other accounts.',
@@ -53,7 +53,7 @@ export default function TermsPolicyPage(props) {
     <PublicInfoPage
       pageKey="terms"
       title="Terms and Policy"
-      subtitle="Rules and policies for using the Hostel Outpass Management System"
+      subtitle="Rules and policies for using HAVENTRA — Smart Hostel Management System"
       intro="These terms define acceptable use, data handling, pass verification expectations, and account responsibilities for all users of this app."
       sections={TERMS_SECTIONS}
       backActionLabel={props.onBackToRegister ? 'Back to Registration' : undefined}

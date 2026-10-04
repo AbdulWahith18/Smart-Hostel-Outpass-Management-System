@@ -22,7 +22,7 @@ export const analyzeReason = async (reason) => {
 
   const genAI = new GoogleGenerativeAI(geminiApiKey)
 
-  const prompt = `You are an assistant for a Hostel Outpass Management System.
+  const prompt = `You are an assistant for HAVENTRA — Smart Hostel Management System.
 Analyze the following reason and return exactly in this format:
 Category: <Family | Medical | Personal | Other>
 Priority: <Low | Medium | High>

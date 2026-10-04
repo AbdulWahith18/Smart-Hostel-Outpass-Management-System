@@ -16,8 +16,8 @@ function TopBar({
     <header className="top-bar" role="banner">
       <div className="top-bar-content">
         <div className="top-bar-left">
-          <img src={homsLogo} alt="HOMS logo" className="top-bar-logo" />
-          <h1 className="top-bar-title">HOMS</h1>
+          <img src={homsLogo} alt="HAVENTRA logo" className="top-bar-logo" />
+          <h1 className="top-bar-title">HAVENTRA</h1>
         </div>
 
         <div className="top-bar-actions">

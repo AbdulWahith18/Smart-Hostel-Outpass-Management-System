@@ -20,10 +20,10 @@ export default function PublicInfoPage({
         <header className="mp-topbar mp-reveal mp-r0">
           <div className="mp-topbar-inner">
             <div className="mp-topbar-brand">
-              <img className="mp-topbar-logo" src={homsLogo} alt="HOMS" />
+              <img className="mp-topbar-logo" src={homsLogo} alt="HAVENTRA" />
               <div className="mp-topbar-name">
-                <span className="mp-topbar-name-main">HOMS</span>
-                <span className="mp-topbar-name-sub">Hostel Outpass</span>
+                <span className="mp-topbar-name-main">HAVENTRA</span>
+                <span className="mp-topbar-name-sub">Smart Hostel System</span>
               </div>
             </div>
             <nav className="mp-topbar-nav">
@@ -58,7 +58,7 @@ export default function PublicInfoPage({
           <section className="pi-content mp-reveal mp-r1" aria-labelledby="info-title">
             <div className="mp-badge">
               <span className="mp-badge-dot" />
-              Hostel Outpass Management System
+              HAVENTRA — Smart Hostel Management System
             </div>
             <h1 id="info-title" className="pi-title">{title}</h1>
             <p className="pi-subtitle">{subtitle}</p>

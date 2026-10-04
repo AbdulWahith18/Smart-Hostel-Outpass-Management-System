@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar, FaEnvelope, FaBroadcastTower, FaUserClock, FaBuilding } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaFileAlt, FaUsers, FaCogs, FaChartBar, FaEnvelope, FaBroadcastTower, FaUserClock, FaBuilding, FaExclamationTriangle } from 'react-icons/fa'
 import './App.css'
 import Register from './register'
 import StudentHome from './studenthome'
@@ -353,7 +353,7 @@ function App() {
         <div className="flex min-h-[calc(100vh-64px)]">
           <aside
             className={`saas-side-shell relative sticky top-16 h-[calc(100vh-64px)] shrink-0 border-r border-teal-200/40 bg-gradient-to-b from-teal-700 to-teal-800 text-teal-50 shadow-lg transition-all duration-300 ease-in-out ${
-              isSidebarOpen ? 'w-64' : 'w-16'
+              isSidebarOpen ? 'w-72' : 'w-16'
             }`}
             aria-label={sidebarAriaLabel}
           >
@@ -427,6 +427,7 @@ function App() {
       { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
       { key: 'hostel', label: 'Hostel Booking', icon: <FaBuilding className="h-4 w-4" aria-hidden="true" /> },
       { key: 'queries', label: 'Queries', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'complaints', label: 'Complaints', icon: <FaExclamationTriangle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'chatbox', label: 'Chatbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
     ]
 
@@ -446,6 +447,7 @@ function App() {
       { key: 'approved', label: 'Approved', icon: <FaCheckCircle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'rejected', label: 'Rejected', icon: <span className="h-4 w-4 text-red-500" aria-hidden="true">&#10006;</span> },
       { key: 'queries', label: 'Queries', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'complaints', label: 'Complaints', icon: <FaExclamationTriangle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'chatbox', label: 'Chatbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
       { key: 'analytics', label: 'Analytics', icon: <FaChartBar className="h-4 w-4" aria-hidden="true" /> },
     ]
@@ -466,6 +468,7 @@ function App() {
       { key: 'manage', label: 'Manage Users', icon: <FaCogs className="h-4 w-4" aria-hidden="true" /> },
       { key: 'pending-rcs', label: 'Pending RCs', icon: <FaUserClock className="h-4 w-4" aria-hidden="true" /> },
       { key: 'hostel', label: 'Hostel Allocation', icon: <FaBuilding className="h-4 w-4" aria-hidden="true" /> },
+      { key: 'complaints', label: 'Complaint Management', icon: <FaExclamationTriangle className="h-4 w-4" aria-hidden="true" /> },
       { key: 'access', label: 'Access Mode', icon: <FaFileAlt className="h-4 w-4" aria-hidden="true" /> },
       { key: 'inbox', label: 'Inbox', icon: <FaEnvelope className="h-4 w-4" aria-hidden="true" /> },
       { key: 'broadcast', label: 'Broadcast', icon: <FaBroadcastTower className="h-4 w-4" aria-hidden="true" /> },

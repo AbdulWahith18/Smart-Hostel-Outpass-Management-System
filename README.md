@@ -1,4 +1,4 @@
-# HOMS — Hostel Outpass Management System
+# HAVENTRA — Smart Hostel Management System
 
 A real-time digital outpass application for hostels — students submit outing requests, wardens approve or reject them instantly, and admins manage the system with the help of an AI assistant.
 
@@ -6,7 +6,7 @@ A real-time digital outpass application for hostels — students submit outing r
 
 ## ✨ Overview
 
-HOMS replaces manual paper outpass slips with a streamlined digital workflow:
+HAVENTRA replaces manual paper outpass slips with a streamlined digital workflow:
 
 - **Students** submit outing requests with a live form preview and get their reason checked by AI before submitting.
 - **RC Wardens** approve or reject passes in real time via Socket.IO — no page refresh needed.
