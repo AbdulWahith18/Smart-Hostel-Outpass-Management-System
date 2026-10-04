@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import HostelAllocation from '../models/HostelAllocation.js'
 import HostelRoom from '../models/HostelRoom.js'
 import HostelBooking from '../models/HostelBooking.js'
@@ -437,9 +438,16 @@ export const getAllocationReport = async (req, res) => {
 export const downloadAllocationPDF = async (req, res) => {
   try {
     const { id } = req.params
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid allocation ID provided.' })
+    }
+
     await buildAllocationPDFStream(id, res)
   } catch (err) {
-    res.status(500).json({ message: 'Failed to generate PDF report.', error: err.message })
+    console.error('PDF Generation Error:', err)
+    if (!res.headersSent) {
+      res.status(500).json({ message: 'Failed to generate PDF report.', error: err.message })
+    }
   }
 }
 
@@ -449,6 +457,10 @@ export const downloadAllocationPDF = async (req, res) => {
 export const downloadAllocationCSV = async (req, res) => {
   try {
     const { id } = req.params
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid allocation ID provided.' })
+    }
+
     const allocation = await HostelAllocation.findById(id)
     if (!allocation) {
       return res.status(404).json({ message: 'Hostel allocation not found.' })
@@ -459,49 +471,94 @@ export const downloadAllocationCSV = async (req, res) => {
       snapshot = await generateAllocationReportSnapshot(id)
     }
 
+    const header = snapshot.allocationHeader || {}
+    const summary = snapshot.summary || {}
+    const blocks = Array.isArray(snapshot.blocks) ? snapshot.blocks : []
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return ''
+      const str = String(val)
+      return `"${str.replace(/"/g, '""')}"`
+    }
+
     const csvLines = []
     csvLines.push(`HOSTEL OUTPASS MANAGEMENT SYSTEM - HOSTEL ROOM ALLOCATION REPORT`)
-    csvLines.push(`Academic Year,${snapshot.allocationHeader.academicYear}`)
-    csvLines.push(`Allocation Name,"${snapshot.allocationHeader.name}"`)
-    csvLines.push(`Period,"${snapshot.allocationHeader.startTimeIST} to ${snapshot.allocationHeader.endTimeIST}"`)
-    csvLines.push(`Status,${snapshot.allocationHeader.status}`)
-    csvLines.push(`Closure Type,${snapshot.allocationHeader.closureType}`)
-    csvLines.push(`Closed At,${snapshot.allocationHeader.closedAtIST}`)
-    csvLines.push(`Closed By,${snapshot.allocationHeader.closedBy}`)
+    csvLines.push(`Academic Year,${escapeCsv(header.academicYear || allocation.academicYear || '')}`)
+    csvLines.push(`Allocation Name,${escapeCsv(header.name || allocation.name || '')}`)
+    csvLines.push(`Period,${escapeCsv(`${header.startTimeIST || formatIST(allocation.startTime)} to ${header.endTimeIST || formatIST(allocation.endTime)}`)}`)
+    csvLines.push(`Status,${escapeCsv(header.status || allocation.status || '')}`)
+    csvLines.push(`Closure Type,${escapeCsv(header.closureType || allocation.closureType || '-')}`)
+    csvLines.push(`Closed At,${escapeCsv(header.closedAtIST || formatIST(allocation.closedAt))}`)
+    csvLines.push(`Closed By,${escapeCsv(header.closedBy || allocation.closedBy || '-')}`)
     csvLines.push(``)
 
     csvLines.push(`SUMMARY METRICS`)
-    csvLines.push(`Total Blocks,${snapshot.summary.totalBlocks}`)
-    csvLines.push(`Total Student Rooms,${snapshot.summary.totalStudentRooms}`)
-    csvLines.push(`Total Student Capacity,${snapshot.summary.totalStudentCapacity}`)
-    csvLines.push(`Occupied Slots,${snapshot.summary.occupiedSlots}`)
-    csvLines.push(`Available Slots,${snapshot.summary.availableSlots}`)
-    csvLines.push(`Occupancy Rate,${snapshot.summary.occupancyPercentage}`)
+    csvLines.push(`Total Blocks,${summary.totalBlocks || allocation.totalBlocks || 0}`)
+    csvLines.push(`Total Student Rooms,${summary.totalStudentRooms || allocation.totalRooms || 0}`)
+    csvLines.push(`Total Student Capacity,${summary.totalStudentCapacity || allocation.totalCapacity || 0}`)
+    csvLines.push(`Occupied Slots,${summary.occupiedSlots || allocation.occupiedCount || 0}`)
+    csvLines.push(`Available Slots,${summary.availableSlots !== undefined ? summary.availableSlots : ((allocation.totalCapacity || 0) - (allocation.occupiedCount || 0))}`)
+    csvLines.push(`Occupancy Rate,${escapeCsv(summary.occupancyPercentage || '0.00%')}`)
     csvLines.push(``)
 
     csvLines.push(`DETAILED ALLOCATION TABLE`)
-    csvLines.push(`Block,Floor,Room Number,Room Capacity,Room Status,Slot Code,Seat Status,Student Name,Register No,Department,Year,Booking Time (IST)`)
+    csvLines.push(`Block,Floor,Room,Room Status,Capacity,Occupied,Available,Slot,Student Name,Register Number,Department,Year,Booking Time`)
 
-    snapshot.blocks.forEach((block) => {
-      block.floors.forEach((floor) => {
-        floor.rooms.forEach((room) => {
-          room.slots.forEach((s) => {
+    blocks.forEach((block) => {
+      const floors = Array.isArray(block.floors) ? block.floors : []
+      floors.forEach((floor) => {
+        const rooms = Array.isArray(floor.rooms) ? floor.rooms : []
+        rooms.forEach((room) => {
+          const slots = Array.isArray(room.slots) ? room.slots : []
+          if (slots.length === 0) {
             csvLines.push(
-              `"${block.blockName}","${floor.floorName}","${room.roomNumber}",${room.capacity},"${room.status}","${s.slotCode}","${
-                s.isBooked ? 'BOOKED' : 'AVAILABLE'
-              }","${s.studentName}","${s.registerNo}","${s.department}","${s.year}","${s.bookedAtIST}"`
+              `${escapeCsv(block.blockName || `Block ${block.blockNumber}`)},` +
+              `${escapeCsv(floor.floorName || `Floor ${floor.floorNumber}`)},` +
+              `${escapeCsv(room.roomNumber)},` +
+              `${escapeCsv(room.status || 'EMPTY')},` +
+              `${room.capacity || 0},` +
+              `${room.occupied || 0},` +
+              `${room.available !== undefined ? room.available : (room.capacity || 0)},` +
+              `"","","","","",""`
             )
-          })
+          } else {
+            slots.forEach((s) => {
+              const studentName = s.studentName && s.studentName !== '-' ? s.studentName : ''
+              const registerNo = s.registerNo && s.registerNo !== '-' ? s.registerNo : ''
+              const department = s.department && s.department !== '-' ? s.department : ''
+              const year = s.year && s.year !== '-' ? s.year : ''
+              const bookedAtIST = s.bookedAtIST && s.bookedAtIST !== '-' ? s.bookedAtIST : ''
+
+              csvLines.push(
+                `${escapeCsv(block.blockName || `Block ${block.blockNumber}`)},` +
+                `${escapeCsv(floor.floorName || `Floor ${floor.floorNumber}`)},` +
+                `${escapeCsv(room.roomNumber)},` +
+                `${escapeCsv(room.status || (room.occupied >= room.capacity ? 'FULL' : room.occupied > 0 ? 'PARTIAL' : 'EMPTY'))},` +
+                `${room.capacity || 0},` +
+                `${room.occupied || 0},` +
+                `${room.available !== undefined ? room.available : (room.capacity - room.occupied)},` +
+                `${escapeCsv(s.slotCode || '')},` +
+                `${escapeCsv(studentName)},` +
+                `${escapeCsv(registerNo)},` +
+                `${escapeCsv(department)},` +
+                `${escapeCsv(year)},` +
+                `${escapeCsv(bookedAtIST)}`
+              )
+            })
+          }
         })
       })
     })
 
     const csvContent = csvLines.join('\n')
+    const safeName = (allocation.name || 'Hostel_Allocation').replace(/[^a-zA-Z0-9_-]/g, '_')
+    const safeYear = (allocation.academicYear || '2026-27').replace(/[^a-zA-Z0-9_-]/g, '_')
 
-    res.setHeader('Content-Type', 'text/csv')
-    res.setHeader('Content-Disposition', `attachment; filename="HOMS_Allocation_Report_${allocation.academicYear}.csv"`)
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', `attachment; filename="HOMS_${safeName}_${safeYear}.csv"`)
     res.status(200).send(csvContent)
   } catch (err) {
+    console.error('CSV Generation Error:', err)
     res.status(500).json({ message: 'Failed to export CSV.', error: err.message })
   }
 }

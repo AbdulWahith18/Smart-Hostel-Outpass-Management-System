@@ -288,6 +288,7 @@ export default function HostelAllocationAdmin() {
   }
 
   const viewReport = async (id) => {
+    setSelectedAllocationId(id)
     setIsReportLoading(true)
     setShowReportModal(true)
     try {
@@ -311,6 +312,10 @@ export default function HostelAllocationAdmin() {
   }
 
   const downloadPDF = async (id, name = 'Hostel_Allocation') => {
+    if (!id || id === 'null' || id === 'undefined') {
+      toast.error('Invalid allocation ID for download.')
+      return
+    }
     try {
       const token = getAuthToken()
       const response = await fetch(`/api/hostel-allocations/admin/${id}/report/pdf`, {
@@ -322,8 +327,9 @@ export default function HostelAllocationAdmin() {
         try {
           const errData = await response.json()
           if (errData.message) errorMsg = errData.message
+          console.error('PDF export server error:', response.status, errData)
         } catch {
-          // ignore
+          console.error('PDF export HTTP status:', response.status)
         }
         toast.error(errorMsg)
         return
@@ -340,12 +346,17 @@ export default function HostelAllocationAdmin() {
       link.remove()
       window.URL.revokeObjectURL(url)
       toast.success('Allocation PDF report downloaded successfully.')
-    } catch {
+    } catch (err) {
+      console.error('PDF export error:', err)
       toast.error('Report generation failed. Please try again.')
     }
   }
 
   const downloadCSV = async (id, name = 'Hostel_Allocation') => {
+    if (!id || id === 'null' || id === 'undefined') {
+      toast.error('Invalid allocation ID for CSV export.')
+      return
+    }
     try {
       const token = getAuthToken()
       const response = await fetch(`/api/hostel-allocations/admin/${id}/report/csv`, {
@@ -357,8 +368,9 @@ export default function HostelAllocationAdmin() {
         try {
           const errData = await response.json()
           if (errData.message) errorMsg = errData.message
+          console.error('CSV export server error:', response.status, errData)
         } catch {
-          // ignore
+          console.error('CSV export HTTP status:', response.status)
         }
         toast.error(errorMsg)
         return
@@ -375,7 +387,8 @@ export default function HostelAllocationAdmin() {
       link.remove()
       window.URL.revokeObjectURL(url)
       toast.success('Allocation CSV export downloaded successfully.')
-    } catch {
+    } catch (err) {
+      console.error('CSV export error:', err)
       toast.error('CSV export failed. Please try again.')
     }
   }
@@ -1026,10 +1039,10 @@ export default function HostelAllocationAdmin() {
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" className="btn btn-outline text-teal-700" onClick={() => downloadCSV(selectedAllocationId)}>
+                  <button type="button" className="btn btn-outline text-teal-700" onClick={() => downloadCSV(selectedAllocationId, reportModalData?.allocationHeader?.name)}>
                     <FaFileCsv className="inline mr-1 text-green-600" /> Export CSV
                   </button>
-                  <button type="button" className="btn btn-primary" onClick={() => downloadPDF(selectedAllocationId)}>
+                  <button type="button" className="btn btn-primary" onClick={() => downloadPDF(selectedAllocationId, reportModalData?.allocationHeader?.name)}>
                     <FaDownload className="inline mr-1" /> Download PDF Report
                   </button>
                 </div>

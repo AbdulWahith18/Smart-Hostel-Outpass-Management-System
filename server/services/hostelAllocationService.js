@@ -128,16 +128,24 @@ export const generateAllocationReportSnapshot = async (allocationId) => {
   const availableSlots = totalStudentCapacity - occupiedSlots
   const overallOccupancyPct = totalStudentCapacity > 0 ? ((occupiedSlots / totalStudentCapacity) * 100).toFixed(2) : '0.00'
 
+  const startTimeVal = allocation.startTime || allocation.createdAt || new Date()
+  const endTimeVal = allocation.endTime || allocation.closedAt || new Date()
+
   const snapshot = {
     generatedAt: new Date(),
     generatedAtIST: formatIST(new Date()),
     allocationHeader: {
       name: allocation.name,
-      academicYear: allocation.academicYear,
-      startTimeIST: formatIST(allocation.startTime),
-      endTimeIST: formatIST(allocation.endTime),
+      academicYear: allocation.academicYear || '2026-2027',
+      startTimeIST: formatIST(startTimeVal),
+      endTimeIST: formatIST(endTimeVal),
       status: allocation.status,
-      closureType: allocation.closureType === 'ADMIN_FORCED' ? 'Admin Forced Closure' : 'Automatic — Scheduled End Time',
+      closureType:
+        allocation.closureType === 'ADMIN_FORCED'
+          ? 'Admin Forced Closure'
+          : allocation.closureType === 'AUTOMATIC'
+          ? 'Automatic — Scheduled End Time'
+          : '-',
       closedAtIST: formatIST(allocation.closedAt),
       closedBy: allocation.closedBy || 'System Scheduler',
     },
@@ -155,9 +163,17 @@ export const generateAllocationReportSnapshot = async (allocationId) => {
     blocks: blockReports,
   }
 
-  allocation.reportSnapshot = snapshot
-  allocation.reportGenerated = true
-  await allocation.save()
+  await HostelAllocation.updateOne(
+    { _id: allocationId },
+    {
+      $set: {
+        reportSnapshot: snapshot,
+        reportGenerated: true,
+        startTime: startTimeVal,
+        endTime: endTimeVal,
+      },
+    }
+  )
 
   return snapshot
 }
@@ -257,12 +273,13 @@ export const buildAllocationPDFStream = async (allocationId, res) => {
     snapshot = await generateAllocationReportSnapshot(allocationId)
   }
 
-  const doc = new PDFDocument({ margin: 36, size: 'A4' })
+  const doc = new PDFDocument({ margin: 36, size: 'A4', bufferPages: true })
 
+  const academicYearStr = (allocation.academicYear || '2026-27').replace(/\s+/g, '_')
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader(
     'Content-Disposition',
-    `attachment; filename="HOMS-Hostel-Allocation-Report-${allocation.academicYear.replace(/\s+/g, '_')}.pdf"`
+    `attachment; filename="HOMS-Hostel-Allocation-Report-${academicYearStr}.pdf"`
   )
 
   doc.pipe(res)
