@@ -2,6 +2,7 @@ import PDFDocument from 'pdfkit'
 import HostelAllocation from '../models/HostelAllocation.js'
 import HostelRoom from '../models/HostelRoom.js'
 import HostelBooking from '../models/HostelBooking.js'
+import { reconcileBroadcastLifecycle } from '../controllers/broadcastController.js'
 
 /**
  * Format a UTC Date object or string into India Standard Time (Asia/Kolkata) string.
@@ -243,18 +244,20 @@ export const checkAndCloseExpiredAllocations = async (io = null) => {
 }
 
 /**
- * Start background timer scheduler for automatic allocation closure.
+ * Start background timer scheduler for automatic allocation closure and broadcast reconciliation.
  */
 let schedulerInterval = null
 
 export const startAllocationScheduler = (io) => {
   // Run startup reconciliation
   checkAndCloseExpiredAllocations(io)
+  reconcileBroadcastLifecycle(io)
 
   if (!schedulerInterval) {
     // Check every 15 seconds
     schedulerInterval = setInterval(() => {
       checkAndCloseExpiredAllocations(io)
+      reconcileBroadcastLifecycle(io)
     }, 15000)
   }
 }

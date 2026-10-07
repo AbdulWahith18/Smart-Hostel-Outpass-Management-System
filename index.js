@@ -14,7 +14,9 @@ import aiRoutes from './server/routes/aiRoutes.js'
 import messageRoutes from './server/routes/messageRoutes.js'
 import hostelAllocationRoutes from './server/routes/hostelAllocationRoutes.js'
 import complaintRoutes from './server/routes/complaintRoutes.js'
+import broadcastRoutes from './server/routes/broadcastRoutes.js'
 import { startAllocationScheduler } from './server/services/hostelAllocationService.js'
+import { reconcileBroadcastLifecycle } from './server/controllers/broadcastController.js'
 import { sendMail } from './server/utils/sendMail.js'
 
 dotenv.config()
@@ -140,6 +142,7 @@ app.use('/api/ai', aiRoutes)
 app.use('/api/messages', messageRoutes)
 app.use('/api/hostel-allocations', hostelAllocationRoutes)
 app.use('/api/complaints', complaintRoutes)
+app.use('/api/broadcasts', broadcastRoutes)
 
 /* SERVE VITE PRODUCTION BUILD IN UNIFIED DEPLOYMENT */
 app.use(express.static(path.join(__dirname, 'dist')))

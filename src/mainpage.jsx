@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './mainpage.css'
 import homsLogo from './assets/homsLogo.png'
+import BroadcastPanel from './components/BroadcastPanel'
 
 const FEATURES = [
   { icon: '🎓', label: 'Students', desc: 'Apply for outpass in seconds' },
@@ -168,6 +169,8 @@ export default function MainPage({ onLogin, onRegister, onNavigate }) {
             </div>
 
           </div>
+
+          <BroadcastPanel />
 
           <p className="mp-brand mp-reveal mp-r6">
             HAVENTRA <span>·</span> Smart Hostel Management System

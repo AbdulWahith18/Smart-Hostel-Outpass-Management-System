@@ -5,6 +5,7 @@ import { getAuthToken } from './utils/authToken'
 import { useToast } from './components/Toast'
 import HostelAllocationAdmin from './components/HostelAllocationAdmin'
 import AdminComplaintView from './components/AdminComplaintView'
+import BroadcastManagement from './components/BroadcastManagement'
 
 const INACTIVITY_DAYS = 60
 
@@ -933,26 +934,8 @@ function AdminHome({ currentUser, activeView = 'view', onViewChange }) {
         )}
 
         {isBroadcastView && (
-          <section className="admin-access-wrap" aria-label="Admin broadcast">
-            <div className="admin-users-header">
-              <div className="admin-users-title-block">
-                <h2>Broadcast</h2>
-                <p className="admin-users-subtitle">Send announcements to every student and RC at once.</p>
-              </div>
-            </div>
-
-            <div className="admin-analytics-card saas-card hover-lift analytics-card">
-              <form className="apply-pass-form" onSubmit={handleBroadcastMessage}>
-                <label htmlFor="broadcastSubject">Subject</label>
-                <input id="broadcastSubject" className="input" type="text" placeholder="Announcement" value={broadcastSubject} onChange={(event) => setBroadcastSubject(event.target.value)} />
-
-                <label htmlFor="broadcastContent">Message</label>
-                <textarea id="broadcastContent" className="input" rows="6" placeholder="Type a broadcast message" value={broadcastContent} onChange={(event) => setBroadcastContent(event.target.value)} />
-
-                {broadcastError && <p className="admin-error-text">{broadcastError}</p>}
-                <button type="submit" className="btn btn-primary hover-lift" disabled={isBroadcastSending}>{isBroadcastSending ? 'Sending...' : 'Broadcast'}</button>
-              </form>
-            </div>
+          <section className="admin-access-wrap" aria-label="Admin public broadcast announcements">
+            <BroadcastManagement />
           </section>
         )}
 
